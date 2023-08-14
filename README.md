@@ -1,15 +1,46 @@
 # big-data-project
 
-1. Go to "batch_processing" folder and run command: docker-compose up --build
-2. Go to "upload_data" folder and run command: ./docker_upload.sh
-   (data will appear in namenode: http://localhost:9870/explorer.html#/user/root/data-lake)
-   if it is in safe mode, just run again
+1. Go to "batch_processing" folder and run command to start containers:
 
-3. Go to "batch_processing and run command: docker cp preprocessing.py spark-master:/preprocessing.py, it is automated now, in cd home
+```
+docker-compose up --build
+```
 
-4. To open spark master bash run command: docker-compose exec -it spark-master bash
+2. Go to "upload_data" folder and run command to upload data to HDFS:
 
-5. In spark bash type to run the script: ./spark/bin/spark-submit /home/preprocessing.py
+```
+./docker_upload.sh
+```
+
+data will appear in namenode: http://localhost:9870/explorer.html#/user/root/data-lake. If there is an error about safe mode, just run the command again.
+
+3. To open spark master bash go to "batch_processing" folder and run command:
+
+```
+docker-compose exec -it spark-master bash
+```
+
+4. To run preprocessing script in bash run command:
+
+```
+./spark/bin/spark-submit /home/preprocessing.py
+```
+
+5. To run processing script in bash run command:
+
+```
+./spark/bin/spark-submit /home/processing.py
+```
+
+.
+
+.
+
+.
+
+.
+
+.
 
 explained attributes: https://earthquake.usgs.gov/data/comcat/index.php#locationSource
 
@@ -21,3 +52,5 @@ column_data_types = df_tect_plates.dtypes
 
 for column, data_type in column_data_types:
 print(f"Column '{column}' has data type '{data_type}'")
+
+Go to "batch_processing and run command: docker cp preprocessing.py spark-master:/preprocessing.py, it is automated now, in cd home
