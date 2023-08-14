@@ -1,6 +1,6 @@
 # REMOVE LATER
-# hdfs dfs -rm -r /user/root/data-lake/raw
-# hdfs dfs -rm -r /user/root/data-lake/transform
+#hdfs dfs -rm -r /user/root/data-lake/raw
+#hdfs dfs -rm -r /user/root/data-lake/transform
 
 # Create directories in HDFS
 hdfs dfs -mkdir -p /user/root/data-lake/raw

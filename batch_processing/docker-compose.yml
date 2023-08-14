@@ -50,18 +50,7 @@ services:
     env_file:
       - ./hadoop.env
 
-  hue:
-    image: gethue/hue:20201111-135001
-    hostname: hue
-    container_name: hue
-    dns: 8.8.8.8
-    ports:
-      - "8888:8888"
-    volumes:
-      - ./conf.dist:/usr/share/hue/desktop/conf
-    depends_on:
-      - namenode
-      
+
 #  zoo1:
 #    image: zookeeper:3.4.9
 #    container_name: zoo1
@@ -111,6 +100,19 @@ services:
 #      - postgresql_data_container:/var/lib/postgresql/data
 #    ports:
 #      - "5432:5432"
+
+#  hue:
+#    image: gethue/hue:20201111-135001
+#    hostname: hue
+#    container_name: hue
+#    dns: 8.8.8.8
+#    ports:
+#      - "8888:8888"
+#    volumes:
+#      - ./conf.dist:/usr/share/hue/desktop/conf
+#    depends_on:
+#      - namenode
+      
 
 volumes:
   hadoop_namenode:
