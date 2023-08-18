@@ -1,2 +1,2 @@
-hdfs
 kafka-python
+hdfs

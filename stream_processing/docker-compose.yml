@@ -37,7 +37,7 @@ services:
     env_file:
       - ./hadoop.env
     volumes:
-      - ./spark:/home
+      - ./consumer:/home/streaming 
       
   spark-worker1:
     image: bde2020/spark-worker:3.0.1-hadoop3.2
@@ -65,17 +65,17 @@ services:
       - zoo1log:/datalog
 
   kafka1:
-    image: confluentinc/cp-kafka:5.5.12
+    image: confluentinc/cp-kafka:5.3.1
     container_name: kafka1
     ports:
-      - "9092:9092"
+      - "9093:9093"
     environment:
-      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka1:19092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka1:19092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
       KAFKA_ZOOKEEPER_CONNECT: "zoo1:2181"
       KAFKA_BROKER_ID: 1
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
       KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
     volumes:
       - kafka1:/var/lib/kafka/data
@@ -86,9 +86,9 @@ services:
     image: confluentinc/cp-kafka:5.3.1
     container_name: kafka2
     ports:
-      - "9093:9093"
+      - "9094:9094"
     environment:
-      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka2:19092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9093
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka2:19092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9094
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
       KAFKA_ZOOKEEPER_CONNECT: "zoo1:2181"
@@ -104,11 +104,12 @@ services:
     build: ./producer
     container_name: kafka_producer
     environment:
-      KAFKA_BROKER: "kafka1:19092,kafka2:19092"
+      KAFKA_BROKERS: "kafka1:19092,kafka2:19092"
       HDFS_NAMENODE: "http://namenode:9870"
     depends_on:
       - kafka1
       - kafka2
+
       
 #  db:
 #    image: postgres:9.4
