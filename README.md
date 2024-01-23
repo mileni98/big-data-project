@@ -5,6 +5,8 @@
 ```
 docker-compose up --build
 ```
+see running containers: docker ps
+
 
 2. Go to "upload_data" folder and run command to upload data to HDFS:
 
@@ -26,6 +28,7 @@ data will appear in namenode: http://localhost:9870/explorer.html#/user/root/dat
 
 ```
 docker-compose exec -it spark-master bash
+docker-compose exec spark-master bash
 ```
 without -it when running in wsl
 

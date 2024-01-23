@@ -71,22 +71,21 @@ df_tect_plates = df_tect_plates.withColumn("latitude", col("latitude").cast(Floa
     .withColumn("longitude", col("longitude").cast(FloatType()))
 
 
-'''
 # Function that returns plate name based on coordinates, using Shapely polygons
-@pandas_udf(StringType())
-def plate_name(latitude, longitude):
-    coordinate = sg.Point(longitude, latitude)
-    for index, row in df_tect_plates.iterrows():
-        polygon = sg.Polygon(zip(row["longitude"], row["latitude"]))
-        if coordinate.within(polygon):
-            return row["plate"]
-    return "None"
+#@pandas_udf(StringType())
+#def plate_name(latitude, longitude):
+#    coordinate = sg.Point(longitude, latitude)
+#    for index, row in df_tect_plates.iterrows():
+#        polygon = sg.Polygon(zip(row["longitude"], row["latitude"]))
+#        if coordinate.within(polygon):
+#            return row["plate"]
+#    return "None"
+#
+#df_batch = df_batch.withColumn("plate", plate_name(
+#    df_batch["latitude"], df_batch["longitude"]))
+#
+#df_batch.show()
 
-df_batch = df_batch.withColumn("plate", plate_name(
-    df_batch["latitude"], df_batch["longitude"]))
-
-df_batch.show()
-'''
 
 
 # Save earthquake dataset to HDFS
