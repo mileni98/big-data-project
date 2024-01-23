@@ -50,6 +50,8 @@ TO SEE if data was written to postgresql:
 ```
 docker exec -it batch_processing_postgresql_1 psql -U postgres -d big_data
 SELECT * FROM public.price_decline;
+docker exec -it postgresql psql -U postgres -d big_data
+
 ```
 .
 
