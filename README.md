@@ -12,6 +12,14 @@ docker-compose up --build
 ./docker_upload.sh
 ```
 
+if there is an error, run the following lines before ./docker_upload.sh
+
+```
+sudo apt-get install dos2unix
+dos2unix docker_upload.sh
+dos2unix upload_hdfs.sh
+```
+
 data will appear in namenode: http://localhost:9870/explorer.html#/user/root/data-lake. If there is an error about safe mode, just run the command again.
 
 3. To open spark master bash go to "batch_processing" folder and run command:
@@ -19,6 +27,7 @@ data will appear in namenode: http://localhost:9870/explorer.html#/user/root/dat
 ```
 docker-compose exec -it spark-master bash
 ```
+without -it when running in wsl
 
 4. To run preprocessing script in bash run command:
 
@@ -31,9 +40,14 @@ docker-compose exec -it spark-master bash
 ```
 ./spark/bin/spark-submit /home/processing.py
 ```
-
+./spark/bin/spark-submit --driver-class-path postgresql-42.7.0.jar /home/processing.py
 .
 
+TO SEE if data was written to postgresql:
+```
+docker exec -it batch_processing_postgresql_1 psql -U postgres -d big_data
+SELECT * FROM public.price_decline;
+```
 .
 
 .

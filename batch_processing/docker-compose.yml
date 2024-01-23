@@ -73,6 +73,19 @@ services:
     env_file:
       - ./hadoop.env
 
+  postgresql:
+    image: postgres:14.1-alpine
+    restart: on-failure:5
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: big_data
+    volumes:
+      - postgresql_data_container:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+
 #  zoo1:
 #    image: zookeeper:3.4.9
 #    container_name: zoo1
@@ -112,17 +125,7 @@ services:
 #      SUBREDDIT: "politics"
 #    depends_on:
 #      - kafka1
-      
-#  db:
-#    image: postgres:9.4
-#    environment:
-#      POSTGRES_USER: postgres
-#      POSTGRES_PASSWORD: postgres
-#    volumes:
-#      - postgresql_data_container:/var/lib/postgresql/data
-#    ports:
-#      - "5432:5432"
-
+    
 #  hue:
 #    image: gethue/hue:20201111-135001
 #    hostname: hue
@@ -140,7 +143,7 @@ volumes:
   hadoop_namenode:
   hadoop_datanode1:
   hadoop_datanode2:
+  postgresql_data_container:
 #  zoo1:
 #  zoo1log:
 #  kafka1:
-#  postgresql_data_container:

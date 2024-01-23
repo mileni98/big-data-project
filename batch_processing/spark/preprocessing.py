@@ -52,6 +52,8 @@ df_batch = df_batch.withColumn("time", col("time").cast(DateType())) \
     .withColumn("magnitude_error", col("magnitude_error").cast(FloatType())) \
 
 
+df_batch.show()
+
 # Read tectonic plate dataset
 df_tect_plates = spark.read \
     .option("delimiter", ",") \

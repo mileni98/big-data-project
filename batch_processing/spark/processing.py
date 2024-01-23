@@ -35,7 +35,7 @@ df_tect_plates = spark.read \
 
 # Batch processing querries
 print("--- 2. Total number of earthquakes with magnitude over 8 for each decade. ---")
-df_batch.withColumn("occurance_year", year(col("time"))) \
+earth_over_8 = df_batch.withColumn("occurance_year", year(col("time"))) \
     .filter(col("magnitude") >= 8) \
     .filter(col("type") == "earthquake") \
     .withColumn("decade", floor(col("occurance_year") / 10) * 10) \
@@ -43,4 +43,15 @@ df_batch.withColumn("occurance_year", year(col("time"))) \
     .agg(
         count("*").alias("total_ocurrances")) \
     .orderBy(desc("decade")) \
-    .show()
+
+earth_over_8.show()
+
+earth_over_8.write \
+  .format("jdbc") \
+  .option("url", "jdbc:postgresql://postgresql:5432/big_data") \
+  .option("driver", "org.postgresql.Driver") \
+  .option("dbtable", "public.price_decline") \
+  .option("user", "postgres") \
+  .option("password", "postgres") \
+  .mode("overwrite") \
+  .save()
