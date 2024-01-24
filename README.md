@@ -81,3 +81,46 @@ for column, data_type in column_data_types:
 print(f"Column '{column}' has data type '{data_type}'")
 
 Go to "batch_processing and run command: docker cp preprocessing.py spark-master:/preprocessing.py, it is automated now, in cd home
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Let's consider an example scenario where you might need to use windowing functions in your earthquake data analysis. Suppose you want to find the top N earthquakes in terms of magnitude for each location source. In this case, you would need to use the row_number() window function to assign ranks to earthquakes within each location source based on their magnitude. Here's an example query:
+#
+#python
+#Copy code
+#from pyspark.sql.window import Window
+#
+## Define a Window specification based on "location_source" and ordering by "magnitude" in descending order
+#windowSpec = Window.partitionBy("location_source").orderBy(col("magnitude").desc())
+#
+## Add a new column "rank" using the row_number() window function
+#df_ranked_earthquakes = df_batch.withColumn("rank", row_number().over(windowSpec))
+#
+## Select the top N earthquakes for each location source
+#top_n_earthquakes = df_ranked_earthquakes.filter(col("rank") <= 3)
+#
+#top_n_earthquakes.show()
+#In this example, the query uses windowing to rank earthquakes within each "location_source" partition based on their magnitude in descending order. The row_number() window function is used to assign a unique rank to each earthquake within its partition. The result is then filtered to select only the top N earthquakes for each location source (in this case, the top 3).
+#
+#This is just one example of a scenario where windowing functions could be useful. Depending on your specific analytical requirements, you might encounter situations where you need to perform calculations or aggregations over a specific window of rows within partitions of your data.
