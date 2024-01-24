@@ -13,7 +13,7 @@ sleep 3
 
 # Copying upload script to the Namenode container.
 echo
-cd ../upload_data
+cd ../setup
 echo "> Copying upload script to namenode..."
 docker cp upload_hdfs.sh namenode:/upload_hdfs.sh
 sleep 3

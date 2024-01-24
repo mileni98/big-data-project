@@ -17,7 +17,6 @@ then
         docker-compose down -v
     fi
 
-    #cd ../batch_processing
     docker-compose -f ../batch_processing/docker-compose.yml down -v
     # docker rmi -f $(docker images -q)
 
@@ -28,8 +27,7 @@ else
         docker-compose down
     fi
     
-    #cd ../batch_processing
-    docker-compose -f ../batch_processing/docker-compose.yml down
+    docker-compose -f ../batch_processing/docker-compose.yml down 
     
 fi
 
