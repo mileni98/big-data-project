@@ -1,55 +1,61 @@
 version: '3'
 
+networks:
+  big_data_network:
+    name: big_data_network
+    external: true
+
+
 services:
 
-  namenode:
-    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
-    container_name: namenode
-    ports:
-      - 9870:9870
-      - 9000:9000
-    volumes:
-      - hadoop_namenode:/hadoop/dfs/name
-    environment:
-      - CLUSTER_NAME=test
-    env_file:
-      - ./hadoop.env
-    
-  datanode1:
-    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    container_name: datanode1
-    depends_on:
-      - namenode
-    volumes:
-      - hadoop_datanode1:/hadoop/dfs/data
-    env_file:
-      - ./hadoop.env
-
-  spark-master:
-    image: bde2020/spark-master:3.0.1-hadoop3.2
-    container_name: spark-master
-    ports:
-      - 8080:8080
-      - 7077:7077
-      - 4040:4040 
-    environment:
-      - PYSPARK_PYTHON=python3
-    env_file:
-      - ./hadoop.env
-    volumes:
-      - ./consumer:/home/streaming 
-      
-  spark-worker1:
-    image: bde2020/spark-worker:3.0.1-hadoop3.2
-    container_name: spark-worker1
-    depends_on:
-      - spark-master
-    environment:
-      - SPARK_MASTER=spark://spark-master:7077
-    ports:
-      - 8081:8081
-    env_file:
-      - ./hadoop.env
+# namenode:
+#   image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+#   container_name: namenode
+#   ports:
+#     - 9870:9870
+#     - 9000:9000
+#   volumes:
+#     - hadoop_namenode:/hadoop/dfs/name
+#   environment:
+#     - CLUSTER_NAME=test
+#   env_file:
+#     - ./hadoop.env
+#   
+# datanode1:
+#   image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+#   container_name: datanode1
+#   depends_on:
+#     - namenode
+#   volumes:
+#     - hadoop_datanode1:/hadoop/dfs/data
+#   env_file:
+#     - ./hadoop.env
+#
+# spark-master:
+#   image: bde2020/spark-master:3.0.1-hadoop3.2
+#   container_name: spark-master
+#   ports:
+#     - 8080:8080
+#     - 7077:7077
+#     - 4040:4040 
+#   environment:
+#     - PYSPARK_PYTHON=python3
+#   env_file:
+#     - ./hadoop.env
+#   volumes:
+#     - ./consumer:/home/streaming 
+#     
+# spark-worker1:
+#   image: bde2020/spark-worker:3.0.1-hadoop3.2
+#   container_name: spark-worker1
+#   depends_on:
+#     - spark-master
+#   environment:
+#     - SPARK_MASTER=spark://spark-master:7077
+#   ports:
+#     - 8081:8081
+#   env_file:
+#     - ./hadoop.env
 
   zoo1:
     image: zookeeper:3.4.9
@@ -63,6 +69,8 @@ services:
     volumes:
       - zoo1:/data
       - zoo1log:/datalog
+    networks:
+      - big_data_network
 
   kafka1:
     image: confluentinc/cp-kafka:5.3.1
@@ -81,6 +89,8 @@ services:
       - kafka1:/var/lib/kafka/data
     depends_on:
       - zoo1
+    networks:
+      - big_data_network
 
   kafka2:
     image: confluentinc/cp-kafka:5.3.1
@@ -99,6 +109,8 @@ services:
       - kafka2:/var/lib/kafka/data
     depends_on:
       - zoo1
+    networks:
+      - big_data_network
 
   producer:
     build: ./producer
@@ -109,7 +121,8 @@ services:
     depends_on:
       - kafka1
       - kafka2
-
+    networks:
+      - big_data_network
       
 #  db:
 #    image: postgres:9.4
@@ -135,8 +148,8 @@ services:
       
 
 volumes:
-  hadoop_namenode:
-  hadoop_datanode1:
+ # hadoop_namenode:
+ # hadoop_datanode1:
   zoo1:
   zoo1log:
   kafka1:

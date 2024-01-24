@@ -46,6 +46,14 @@ without -it when running in wsl
 ./spark/bin/spark-submit --driver-class-path postgresql-42.7.0.jar /home/processing.py
 .
 
+
+
+docker-compose logs -f producer
+see producer logs
+
+
+
+
 TO SEE if data was written to postgresql:
 ```
 docker exec -it batch_processing_postgresql_1 psql -U postgres -d big_data

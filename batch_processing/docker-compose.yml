@@ -1,7 +1,12 @@
 version: '3'
 
-services:
+networks:
+  big_data_network:
+    name: big_data_network
+    external: true
 
+
+services:
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     container_name: namenode
@@ -14,6 +19,8 @@ services:
       - CLUSTER_NAME=test
     env_file:
       - ./hadoop.env
+    networks:
+      - big_data_network
     
   datanode1:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
@@ -24,6 +31,8 @@ services:
       - hadoop_datanode1:/hadoop/dfs/data
     env_file:
       - ./hadoop.env
+    networks:
+      - big_data_network
 
   datanode2:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
@@ -34,6 +43,8 @@ services:
       - hadoop_datanode2:/hadoop/dfs/data
     env_file:
       - ./hadoop.env
+    networks:
+      - big_data_network
 
   spark-master:
     image: bde2020/spark-master:3.0.1-hadoop3.2
@@ -48,7 +59,9 @@ services:
       - ./hadoop.env
     volumes:
       - ./spark:/home
-      
+    networks:
+      - big_data_network
+
   spark-worker1:
     image: bde2020/spark-worker:3.0.1-hadoop3.2
     container_name: spark-worker1
@@ -60,6 +73,8 @@ services:
       - 8081:8081
     env_file:
       - ./hadoop.env
+    networks:
+      - big_data_network
 
   spark-worker2:
     image: bde2020/spark-worker:3.0.1-hadoop3.2
@@ -72,6 +87,8 @@ services:
       - 8082:8081
     env_file:
       - ./hadoop.env
+    networks:
+      - big_data_network
 
   postgresql:
     image: postgres:14.1-alpine
@@ -82,9 +99,11 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: big_data
     volumes:
-      - postgresql_data:/var/lib/postgresql/data
+      - postgresdb_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - big_data_network
 
   metabase-app:
     image: metabase/metabase
@@ -105,7 +124,8 @@ services:
       - postgresql
     links:
       - postgresql
-
+    networks:
+      - big_data_network
 
 #  zoo1:
 #    image: zookeeper:3.4.9
@@ -164,7 +184,7 @@ volumes:
   hadoop_namenode:
   hadoop_datanode1:
   hadoop_datanode2:
-  postgresql_data:
+  postgresdb_data:
   metabase:
 #  zoo1:
 #  zoo1log:
