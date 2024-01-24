@@ -95,13 +95,22 @@ Go to "batch_processing and run command: docker cp preprocessing.py spark-master
 
 
 
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 
+PS C:\Windows\system32> wsl --install -d Ubuntu-22.04
+aleksa 1234
 
+wsl --status
+previous will install ubuntu command line, install in visual studio WSL extension to acces wsl terminal
+in ubuntru type:
+sudo apt-get update
+sudo apt-get install docker-compose-plugin
 
-
-
-
-
+Move wsl do D drive - https://www.youtube.com/watch?v=13jo3ppi7a0&ab_channel=TroubleChute
+wsl --list
+wsl --shutwodn
+wsl
+wsl --set-version Ubuntu-22.04 2
 
 
 
@@ -124,3 +133,48 @@ Go to "batch_processing and run command: docker cp preprocessing.py spark-master
 #In this example, the query uses windowing to rank earthquakes within each "location_source" partition based on their magnitude in descending order. The row_number() window function is used to assign a unique rank to each earthquake within its partition. The result is then filtered to select only the top N earthquakes for each location source (in this case, the top 3).
 #
 #This is just one example of a scenario where windowing functions could be useful. Depending on your specific analytical requirements, you might encounter situations where you need to perform calculations or aggregations over a specific window of rows within partitions of your data.
+
+
+
+
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import expr
+
+# Create a Spark session
+spark = SparkSession.builder.appName("SparkGeometryExample").getOrCreate()
+
+# Sample data
+coordinates_data = {
+    'plate': ['a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b'],
+    'lat': [10, 10, 20, 20, 10, 20, 20, 30, 30, 20],
+    'lon': [10, 20, 20, 10, 10, 20, 30, 30, 20, 20]
+}
+
+df_coordinates = spark.createDataFrame(pd.DataFrame(coordinates_data))
+
+# Sample additional points data
+additional_points_data = {
+    'lat': [14, 15],
+    'lon': [18, 20]
+}
+
+df_points = spark.createDataFrame(pd.DataFrame(additional_points_data))
+
+# Define a DataFrame for additional points
+df_points = df_points.selectExpr("lat as point_lat", "lon as point_lon")
+
+# Use Spark functions for geometric operations
+df_result = df_points.crossJoin(df_coordinates).withColumn(
+    "inside_square",
+    expr("ST_Contains(ST_PolygonFromEnvelope(array(lat, lon, lat + 1, lon + 1)), ST_Point(point_lon, point_lat))")
+)
+
+# Show the result
+df_result.show()
+
+
+
+
+
+https://github.com/IBMDataScience/sample-notebooks/blob/master/CloudPakForData/notebooks/Spatial%20Queries%20in%20PySpark.ipynb

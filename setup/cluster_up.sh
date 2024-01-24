@@ -34,7 +34,6 @@ while docker exec namenode hdfs dfsadmin -safemode get | grep -q "Safe mode is O
 done
 
 # Executing the upload to HDFS commands.
-echo 
 echo "> Executing upload to HDFS commands..."
 docker exec namenode bash ./upload_hdfs.sh
 sleep 3
