@@ -42,7 +42,8 @@ df_batch = df_batch.select(
     col("locationSource").alias("location_source"))
 
 # All columns are of String type (.dtypes), so converting types
-df_batch = df_batch.withColumn("time", col("time").cast(DateType())) \
+df_batch = df_batch \
+    .withColumn("time", col("time").cast(DateType())) \
     .withColumn("latitude", col("latitude").cast(FloatType())) \
     .withColumn("longitude", col("longitude").cast(FloatType())) \
     .withColumn("depth", col("depth").cast(FloatType())) \
@@ -50,7 +51,6 @@ df_batch = df_batch.withColumn("time", col("time").cast(DateType())) \
     .withColumn("horizontal_error", col("horizontal_error").cast(FloatType())) \
     .withColumn("depth_error", col("depth_error").cast(FloatType())) \
     .withColumn("magnitude_error", col("magnitude_error").cast(FloatType())) \
-
 
 df_batch.show()
 
@@ -67,25 +67,14 @@ df_tect_plates = df_tect_plates.select(
     col("lon").alias("longitude"))
 
 # All columns are of String type (.dtypes), so converting types
-df_tect_plates = df_tect_plates.withColumn("latitude", col("latitude").cast(FloatType())) \
+df_tect_plates = df_tect_plates \
+    .withColumn("latitude", col("latitude").cast(FloatType())) \
     .withColumn("longitude", col("longitude").cast(FloatType()))
 
+# Add a column with sequential order starting from 1
+df_tect_plates = df_tect_plates.withColumn("order", monotonically_increasing_id() + 1)
 
-# Function that returns plate name based on coordinates, using Shapely polygons
-#@pandas_udf(StringType())
-#def plate_name(latitude, longitude):
-#    coordinate = sg.Point(longitude, latitude)
-#    for index, row in df_tect_plates.iterrows():
-#        polygon = sg.Polygon(zip(row["longitude"], row["latitude"]))
-#        if coordinate.within(polygon):
-#            return row["plate"]
-#    return "None"
-#
-#df_batch = df_batch.withColumn("plate", plate_name(
-#    df_batch["latitude"], df_batch["longitude"]))
-#
-#df_batch.show()
-
+df_tect_plates.show()
 
 
 # Save earthquake dataset to HDFS

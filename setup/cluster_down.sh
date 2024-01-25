@@ -1,5 +1,5 @@
 # Shutting down the cluster.
-echo 
+echo
 echo "> Shutting down cluster..."
 sleep 3
 
