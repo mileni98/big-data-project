@@ -20,6 +20,8 @@ if there is an error, run the following lines before ./docker_upload.sh
 sudo apt-get install dos2unix
 dos2unix docker_upload.sh
 dos2unix upload_hdfs.sh
+
+chmod +x cluster_up.sh 
 ```
 
 data will appear in namenode: http://localhost:9870/explorer.html#/user/root/data-lake. If there is an error about safe mode, just run the command again.
@@ -85,7 +87,8 @@ Go to "batch_processing and run command: docker cp preprocessing.py spark-master
 
 
 
-
+https://www.kaggle.com/datasets/danielpe/earthquakes
+https://www.kaggle.com/datasets/cwthompson/tectonic-plate-boundaries
 
 
 

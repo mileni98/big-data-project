@@ -26,6 +26,10 @@ docker cp earthquake_data.csv namenode:/batch_data.csv
 docker cp tectonic_plate_boundaries.csv namenode:/tectonic_boundaries.csv
 sleep 3
 
+docker cp hospitals.csv namenode:/hospitals.csv
+docker cp countries.csv namenode:/countries.csv
+sleep 3
+
 # Wait until HDFS is out of safe mode.
 echo
 while docker exec namenode hdfs dfsadmin -safemode get | grep -q "Safe mode is ON"; do
