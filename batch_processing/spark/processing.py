@@ -3,13 +3,13 @@ from pyspark.sql.types import *
 from pyspark.sql.functions import *
 from pyspark.sql import SparkSession
 
-
+# Function to suppress logs
 def quiet_logs(sc):
     logger = sc._jvm.org.apache.log4j
     logger.LogManager.getLogger('org'). setLevel(logger.Level.ERROR)
     logger.LogManager.getLogger('akka').setLevel(logger.Level.ERROR)
 
-# Initialize spark
+# Create a Spark session
 spark = SparkSession \
     .builder \
     .appName('Spark Preprocessing') \
@@ -17,6 +17,7 @@ spark = SparkSession \
 
 quiet_logs(spark)
 
+# Get HDFS Namenode from environment variable
 HDFS_NAMENODE = os.environ['CORE_CONF_fs_defaultFS']
 
 # Read earthquake dataset
@@ -25,7 +26,7 @@ df_batch = spark.read \
     .option('header', 'true') \
     .csv(HDFS_NAMENODE + '/user/root/data-lake/transform/batch_data.csv')
 
-# Read tectonic plate dataset
+# Read tectonic plates dataset
 df_tect_plates = spark.read \
     .option('delimiter', ',') \
     .option('header', 'true') \

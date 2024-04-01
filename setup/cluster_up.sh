@@ -48,6 +48,14 @@ echo "> Copying PostgreSQL JAR file to Spark Master..."
 docker cp postgresql-42.7.0.jar spark-master:./postgresql-42.7.0.jar
 sleep 3
 
+# Copying the Geospark JAR files to the Spark Master container.
+echo
+echo "> Copying Geospark JAR files to Spark Master..."
+docker cp geospark-1.3.1.jar spark-master:./geospark-1.3.1.jar
+docker cp geospark-sql-1.3.1.jar spark-master:./geospark-sql-1.3.1.jar
+docker cp geospark-viz-1.3.1.jar spark-master:./geospark-viz-1.3.1.jar
+sleep 3
+
 # Fininshing cluster setup.
 echo
 echo "> Cluster ready for use."

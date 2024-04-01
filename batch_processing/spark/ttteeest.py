@@ -3,6 +3,8 @@ from pyspark.sql.types import *
 from pyspark.sql.functions import *
 from pyspark.sql import SparkSession
 
+from geospark.register import upload_jars
+from geospark.register import GeoSparkRegistrator
 
 def quiet_logs(sc):
     logger = sc._jvm.org.apache.log4j
@@ -13,13 +15,11 @@ def quiet_logs(sc):
 spark = SparkSession \
     .builder \
     .appName('Spark Preprocessing') \
-    .config("spark.jars.packages", "org.datasyslab:geospark:1.3.2") \
     .getOrCreate()
 
 quiet_logs(spark)
 
-# Register the Spark SQL spatial functions
-#spark._jvm.org.apache.spark.sql.types.SqlGeometry.init(spark._jsparkSession())
+GeoSparkRegistrator.registerAll(spark)
 
 
 HDFS_NAMENODE = os.environ["CORE_CONF_fs_defaultFS"]

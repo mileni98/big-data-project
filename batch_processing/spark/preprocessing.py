@@ -1,17 +1,15 @@
 import os
-#import shapely.geometry as sg
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
 from pyspark.sql import SparkSession
 
-
+# Function to suppress logs
 def quiet_logs(sc):
     logger = sc._jvm.org.apache.log4j
     logger.LogManager.getLogger("org"). setLevel(logger.Level.ERROR)
     logger.LogManager.getLogger("akka").setLevel(logger.Level.ERROR)
 
-
-# Initialize spark
+# Create a Spark session
 spark = SparkSession \
     .builder \
     .appName("Spark Preprocessing") \
@@ -19,8 +17,8 @@ spark = SparkSession \
 
 quiet_logs(spark)
 
+# Get HDFS Namenode from environment variable
 HDFS_NAMENODE = os.environ["CORE_CONF_fs_defaultFS"]
-
 
 # Read earthquake dataset
 df_batch = spark.read \
@@ -52,9 +50,10 @@ df_batch = df_batch \
     .withColumn("depth_error", col("depth_error").cast(FloatType())) \
     .withColumn("magnitude_error", col("magnitude_error").cast(FloatType())) \
 
+# Show the dataframe
 df_batch.show()
 
-# Read tectonic plate dataset
+# Read tectonic plates dataset
 df_tect_plates = spark.read \
     .option("delimiter", ",") \
     .option("header", "true") \
@@ -74,17 +73,16 @@ df_tect_plates = df_tect_plates \
 # Add a column with sequential order starting from 1
 df_tect_plates = df_tect_plates.withColumn("order", monotonically_increasing_id() + 1)
 
+# Show the dataframe
 df_tect_plates.show()
 
-
-# Save earthquake dataset to HDFS
+# Write the batch dataframe to HDFS
 df_batch.write \
     .mode("overwrite") \
     .option("header", "true") \
     .csv(HDFS_NAMENODE + "/user/root/data-lake/transform/batch_data.csv")
 
-
-# Save earthquake dataset to HDFS
+# Write the tectonic plates dataframe to HDFS
 df_tect_plates.write \
     .mode("overwrite") \
     .option("header", "true") \

@@ -14,4 +14,5 @@
 
 echo "> Starting teeeest script..."
 sleep 5
-./spark/bin/spark-submit /home/batch/ttteeest.py 
+#./spark/bin/spark-submit --jars /geospark-1.3.1.jar /home/batch/ttteeest.py
+./spark/bin/spark-submit --jars /geospark-1.3.1.jar,/geospark-sql-1.3.1.jar,/geospark-viz-1.3.1.jar /home/batch/ttteeest.py
