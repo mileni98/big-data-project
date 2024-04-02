@@ -46,8 +46,8 @@ services:
       - big_data_network
 
   spark-master:
-    #image: custom-spark-master:latest  # Use your custom-built image here
-    image: bde2020/spark-master:3.0.1-hadoop3.2
+    image: custom-spark-master:latest 
+    #image: bde2020/spark-master:3.0.1-hadoop3.2
     container_name: spark-master
     ports:
       - 8080:8080
