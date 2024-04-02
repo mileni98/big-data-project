@@ -7,7 +7,7 @@ sleep 3
 # Building custom Spark Master image.
 echo 
 cd ../batch_processing
-echo "Building custom Spark Master image..."
+echo "> Building custom Spark Master image..."
 docker build -t custom-spark-master:latest .
 sleep 3
 

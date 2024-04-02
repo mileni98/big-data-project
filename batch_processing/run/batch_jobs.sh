@@ -9,4 +9,4 @@
 
 echo "> Starting test script..."
 sleep 5
-./spark/bin/spark-submit /home/batch/test2.py
+./spark/bin/spark-submit /home/batch/test.py
