@@ -1,3 +1,48 @@
+apk update
+apk add --no-cache python3 py3-pip python3-dev git bash build-base libffi-dev geos-dev gdal-dev proj-dev cmake make g++ alpine-sdk cmake
+pip3 install --upgrade pip setuptools wheel numpy 
+pip3 install ipython
+apk update
+apk upgrade
+apk search geos
+wget http://download.osgeo.org/geos/geos-3.8.0.tar.bz2
+tar xjf geos-3.8.0.tar.bz2
+cd geos-3.8.0
+./configure
+make
+make install
+pip3 install shapely --no-binary shapely
+pip3 install apache-sedona
+
+
+echo "from pyspark.sql import SparkSession
+from shapely.geometry import Point, Polygon
+from pyspark.sql.functions import udf, col
+from pyspark.sql.types import BooleanType
+
+# Initialize Spark Session
+spark = SparkSession.builder.appName('GeoCheck').getOrCreate()
+
+# Define a sample Polygon
+polygon = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+
+# UDF to check if a point is in the polygon
+@udf(BooleanType())
+def is_point_in_polygon(x, y):
+    point = Point(x, y)
+    return polygon.contains(point)
+
+# Create a DataFrame with sample points
+points_df = spark.createDataFrame([(0.5, 0.5, 'Point A'), (1.5, 1.5, 'Point B'), (0.25, 0.25, 'Point C')], ['x', 'y', 'name'])
+
+# Use the UDF to add a column showing if points are inside the polygon
+points_inside = points_df.withColumn('is_inside', is_point_in_polygon(col('x'), col('y')))
+
+points_inside.show()
+" > /home/batch/test2.py
+
+
+
 # big-data-project
 
 1. Go to "batch_processing" folder and run command to start containers:
