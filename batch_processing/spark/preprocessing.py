@@ -2,6 +2,8 @@ import os
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
 from pyspark.sql import SparkSession
+from shapely.wkt import dumps, loads
+from shapely.geometry import Polygon, Point
 
 # Function to suppress logs
 def quiet_logs(sc):
@@ -24,7 +26,9 @@ HDFS_NAMENODE = os.environ["CORE_CONF_fs_defaultFS"]
 df_batch = spark.read \
     .option("delimiter", ",") \
     .option("header", "true") \
-    .csv(HDFS_NAMENODE + "/user/root/data-lake/raw/batch_data.csv")
+    .csv(HDFS_NAMENODE + "/user/root/data-lake/raw/batch_data.csv") \
+    .orderBy(desc("time")) \
+    .limit(500)
 
 # Select and Rename columns
 df_batch = df_batch.select(
@@ -70,13 +74,36 @@ df_tect_plates = df_tect_plates \
     .withColumn("latitude", col("latitude").cast(FloatType())) \
     .withColumn("longitude", col("longitude").cast(FloatType()))
 
-# Add a column with sequential order starting from 1
-df_tect_plates = df_tect_plates.withColumn("order", monotonically_increasing_id() + 1)
-
 # Show the dataframe
 df_tect_plates.show()
 
-# Write the batch dataframe to HDFS
+# Group by polygon name and aggregate vertices into a list
+polygons_grouped = df_tect_plates.groupBy('plate_name').agg(collect_list(struct('latitude', 'longitude')).alias('vertices'))
+
+# Broadcast the grouped polygon data
+broadcast_polygons_list = spark.sparkContext.broadcast(polygons_grouped.collect())
+
+# Show the broadcasted polygons
+print(broadcast_polygons_list.value)
+
+# UDF to check which polygon a point belongs to
+@udf(StringType())
+def point_in_which_polygon(x, y):
+    point = Point(x, y)
+    for polygon in broadcast_polygons_list.value:
+        polygon_name, vertices = polygon['plate_name'], polygon['vertices']
+        polygon_shape = Polygon([(vertex['latitude'], vertex['longitude']) for vertex in vertices])
+        if polygon_shape.contains(point):
+            return polygon_name
+    return 'Not in any polygon'
+
+# Add a column showing which polygon each point belongs to
+df_batch = df_batch.withColumn('tectonic_plate', point_in_which_polygon(col('latitude'), col('longitude')))
+
+df_batch.show()
+
+
+## Write the batch dataframe to HDFS
 df_batch.write \
     .mode("overwrite") \
     .option("header", "true") \
