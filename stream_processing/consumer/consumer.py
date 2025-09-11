@@ -18,12 +18,18 @@ spark = SparkSession \
 
 quiet_logs(spark)
 
-df_stream = spark.readStream \
+df_stream_raw = spark.readStream \
     .format('kafka') \
     .option("kafka.bootstrap.servers", "kafka1:19092,kafka2:19092") \
     .option("subscribe", TOPIC) \
     .load()
 
+# Cast key/value to STRING
+df_stream = df_stream_raw.selectExpr(
+    "CAST(key AS STRING) AS kafka_key",
+    "CAST(value AS STRING) AS json_str",
+    "timestamp"
+)
 
 # Display intermediate results for debugging
 query = df_stream.writeStream \

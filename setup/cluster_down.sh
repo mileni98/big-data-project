@@ -16,7 +16,7 @@ then
     if docker-compose ps &> /dev/null; then
         docker-compose down -v
     fi
-
+    # Bring down the batch processing docker and delete volumes.
     docker-compose -f ../batch_processing/docker-compose.yml down -v
     # docker rmi -f $(docker images -q)
 
@@ -26,7 +26,7 @@ else
     if docker-compose ps &> /dev/null; then
         docker-compose down
     fi
-    
+    # Bring down the batch processing docker without deleting volumes.
     docker-compose -f ../batch_processing/docker-compose.yml down 
     
 fi

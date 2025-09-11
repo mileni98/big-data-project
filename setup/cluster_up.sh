@@ -41,7 +41,7 @@ sleep 3
 # Copying the PostgreSQL JAR file to the Spark Master container.
 echo 
 echo "> Copying PostgreSQL JAR file to Spark Master..."
-docker cp postgresql-42.7.0.jar spark-master:./postgresql-42.7.0.jar
+docker cp postgresql-42.7.7.jar spark-master:./postgresql-42.7.7.jar
 sleep 3
 
 # Fininshing cluster setup.

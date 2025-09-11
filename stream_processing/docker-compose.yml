@@ -1,11 +1,5 @@
-version: '3'
-
-networks:
-  big_data_network:
-    name: big_data_network
-    external: true
-
 services:
+
   zoo1:
     image: zookeeper:3.4.9
     container_name: zoo1
@@ -61,6 +55,19 @@ services:
     networks:
       - big_data_network
 
+  kafdrop:
+    image: obsidiandynamics/kafdrop:3.27.0
+    container_name: kafdrop
+    ports: 
+      - "9008:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka1:19092,kafka2:19092"
+    depends_on: 
+      - kafka1
+      - kafka2
+    networks: 
+      - big_data_network
+
   producer:
     build: ./producer
     container_name: kafka_producer
@@ -78,3 +85,8 @@ volumes:
   zoo1log:
   kafka1:
   kafka2:
+
+networks:
+  big_data_network:
+    name: big_data_network
+    external: true

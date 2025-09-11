@@ -1,2 +1,2 @@
-kafka-python
-hdfs
+kafka-python==2.0.2
+hdfs==2.6.0
