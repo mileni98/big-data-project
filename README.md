@@ -11,6 +11,10 @@ This will start up the initial architecture, create docker networks, run contain
 sudo apt-get install dos2unix
 dos2unix cluster_up.sh
 dos2unix upload_hdfs.sh
+dos2unix cluster_down.sh
+chmod +x cluster_up.sh
+chmod +x upload_hdfs.sh
+chmod +x cluster_down.sh
 ```
 
 Verify data has been successfully copied to datanodes - http://localhost:9870/explorer.html#/user/root/data-lake.
@@ -19,6 +23,8 @@ Verify data has been successfully copied to datanodes - http://localhost:9870/ex
 
 ```
 ./batch_jobs_run.sh
+dos2unix batch_jobs_run.sh
+chmod +x batch_jobs_run.sh
 ```
 This will copy the corresponding code to the spark master container and will run the preprocessing and processing script. Results will be visible in the terminal.
 
