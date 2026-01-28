@@ -51,6 +51,7 @@ services:
     env_file:
       - ./hadoop.env
     volumes:
+      # Copy bath and stream processing scripts into the Spark master container
       - ./spark:/home/batch
       - ../stream_processing/consumer:/home/streaming/consumer
     networks:

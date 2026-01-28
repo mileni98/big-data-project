@@ -41,6 +41,8 @@ On http://localhost:4040 once the app is running information about the current r
 
 ```
 ./stream_jobs_run.sh
+dos2unix stream_jobs_run.sh
+chmod +x stream_jobs_run.sh
 ```
 
 
