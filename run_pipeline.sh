@@ -2,8 +2,8 @@
 set -e
 
 # Flags to control which parts of the pipeline to run.
-RUN_SETUP=true
-RUN_BATCH=true
+RUN_SETUP=false
+RUN_BATCH=false
 RUN_STREAM=true
 
 # Absolute path to the root directory of the project.
