@@ -1,5 +1,15 @@
 # Big data project
 
+
+downloa plates data from https://github.com/fraxen/tectonicplates/tree/master
+and downloa PB2002_plates.shp, PB2002_plates.dbf, PB2002_plates.shx files and put them in the data folder.
+
+Run the helper script to convert the shapefile to a csv with WKT geometry format, which will be used in the batch processing step:
+```
+python batch_processing/spark/helper_script.py
+```
+(! NOTE currently spark incompatible with sedona to load directly shapefile)
+
 ### 1. Arhitecture Setup
 
 Go to the root older and run the following command to run the full pipeline:
