@@ -1,161 +1,150 @@
 import os
+import time
+
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, DataFrame
 
 
 def quiet_logs(sc):
     logger = sc._jvm.org.apache.log4j
     logger.LogManager.getLogger('org'). setLevel(logger.Level.ERROR)
     logger.LogManager.getLogger('akka').setLevel(logger.Level.ERROR)
+    
 
 # Initialize spark
 spark = SparkSession \
     .builder \
-    .appName('Spark Preprocessing') \
+    .appName('Spark Processing') \
     .getOrCreate()
 
 quiet_logs(spark)
 
-HDFS_NAMENODE = os.environ['CORE_CONF_fs_defaultFS']
+# Register Sedona UDTs and UDFs
+spark._jvm.org.apache.sedona.sql.utils.SedonaSQLRegistrator.registerAll(spark._jsparkSession)
 
-# Read earthquake dataset
-df_batch = spark.read \
-    .option('delimiter', ',') \
-    .option('header', 'true') \
-    .csv(HDFS_NAMENODE + '/user/root/data-lake/transform/batch_data.csv')
-
-# Read tectonic plate dataset
-df_tect_plates = spark.read \
-    .option('delimiter', ',') \
-    .option('header', 'true') \
-    .csv(HDFS_NAMENODE + '/user/root/data-lake/transform/tectonic_boundaries.csv')
+HDFS_NAMENODE = os.environ["CORE_CONF_fs_defaultFS"]
 
 
-
-# ----------------------------------------------- Query 1 -----------------------------------------------
-print('\n--- 1. Does the change of seasons influence the frequency and intensity of earthquakes? ---')
-df_query1 = df_batch.withColumn('month', month(col('time')))
-df_query1 = df_query1.withColumn('day', dayofmonth(col('time')))
-
-# Define seasons
-df_query1 = df_query1.withColumn('season', 
-    when((col('month') == 3) & (col('day') >= 20), 'Spring')
-    .when((col('month') == 4) | (col('month') == 5), 'Spring')
-    .when((col('month') == 6) & (col('day') <= 20), 'Spring')
+def load_csv_into_df(hdfs_path: str) -> DataFrame:
+    """Load a CSV file from HDFS into a Spark DataFrame."""
+    # Read the earthquake dataset from HDFS
+    return spark.read \
+        .option("delimiter", ",") \
+        .option("header", "true") \
+        .csv(HDFS_NAMENODE + hdfs_path)
     
-    .when((col('month') == 6) & (col('day') > 20), 'Summer')
-    .when((col('month') == 7) | (col('month') == 8), 'Summer')
-    .when((col('month') == 9) & (col('day') <= 22), 'Summer')
-
-    .when((col('month') == 9) & (col('day') > 22), 'Fall')
-    .when((col('month') == 10) | (col('month') == 11), 'Fall')
-    .when((col('month') == 12) & (col('day') <= 21), 'Fall')
-
-    .otherwise('Winter')
-)
-
-# Perform transformations
-df_query1 = df_query1.filter(col('type') == 'earthquake') \
-    .groupBy('season') \
-    .agg(
-        count('*').alias('total_occurrences'),
-        avg('magnitude').alias('average_magnitude')
-    ) \
-    .orderBy(desc('total_occurrences'))
-
-df_query1.show()
-
-
-# ----------------------------------------------- Query 2 -----------------------------------------------
-print('\n--- 2. Total number of earthquakes with magnitude over 8 for each decade. ---')
-df_query2 = df_batch.withColumn('occurance_year', year(col('time')))
-
-# Perform transformations
-df_query2 = df_query2.filter(col('magnitude') >= 8) \
-    .filter(col('type') == 'earthquake') \
-    .withColumn('decade', floor(col('occurance_year') / 10) * 10) \
-    .groupBy('decade') \
-    .agg(
-        count('*').alias('total_ocurrances')
-    ) \
-    .orderBy(desc('decade')) 
-
-df_query2.show()
-
-df_query2.write \
-  .format('jdbc') \
-  .option('url', 'jdbc:postgresql://postgresql:5432/big_data') \
-  .option('driver', 'org.postgresql.Driver') \
-  .option('dbtable', 'public.price_decline') \
-  .option('user', 'postgres') \
-  .option('password', 'postgres') \
-  .mode('overwrite') \
-  .save()
-
-
-# ----------------------------------------------- Query 3 -----------------------------------------------
-print('\n--- 3. What is the minimum and maximum depth recorded for earthquakes in the 20th and 21st centuries? ---')
-df_query3 = df_batch.withColumn('century', 
-    when(year(col('time')).between(1900, 1999), '20th')
-    .when(year(col('time')).between(2000, 2099), '21st')
-)
-
-# Perform transformations
-df_query3 = df_query3.filter(col('type') == 'earthquake') \
-    .groupBy('century') \
-    .agg(
-        min('depth').alias('minimum_depth'),
-        max('depth').alias('maximum_depth')
-    ) \
-    .orderBy('century') 
     
-df_query3.show()
+def save_dataframe_to_postgres(df: DataFrame, table_name: str) -> None:
+    """Save a Spark DataFrame to a PostgreSQL table."""
+    df.write \
+        .format('jdbc') \
+        .option('url', 'jdbc:postgresql://postgresql:5432/big_data') \
+        .option('driver', 'org.postgresql.Driver') \
+        .option('dbtable', f'public.{table_name}') \
+        .option('user', 'postgres') \
+        .option('password', 'postgres') \
+        .mode('overwrite') \
+        .save()
 
 
-# ----------------------------------------------- Query 4 -----------------------------------------------
-print('\n\n--- 4. How often do "sonic booms", "quarry blasts", "nuclear explosion" and "explosions" occur each year? ---')
-df_query4 = df_batch.withColumn('occurance_year', year(col('time')))
-
-df_query4 = df_query4.filter((col('type') == 'sonic boom') | (col('type') == 'quarry blast') | (col('type') == 'explosion') | (col('type') == 'nuclear explosion')) \
-    .groupBy('occurance_year', 'type') \
-    .agg(
-        count('*').alias('total_occurrences')
-    ) \
-    .orderBy('occurance_year', 'type')
-
-df_query4.show()
+def run_query_1(df_batch: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
 
 
-# ----------------------------------------------- Query 5 -----------------------------------------------
-print('\n\n--- 5.? ---')
+def run_query_2(df_batch: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
 
 
-
-# ----------------------------------------------- Query 6 -----------------------------------------------
-print('\n\n--- 6.? ---')
-
-
-
-# ----------------------------------------------- Query 7 -----------------------------------------------
-print('\n\n--- 7.? ---')
+def run_query_3(df_batch: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
 
 
-
-# ----------------------------------------------- Query 8 -----------------------------------------------
-print('\n\n--- 8.? ---')
-
-
-
-# ----------------------------------------------- Query 9 -----------------------------------------------
-print('\n\n--- 9.? ---')
+def run_query_4(df_batch: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
 
 
+def run_query_5(df_batch: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
 
-# ----------------------------------------------- Query 10 -----------------------------------------------
-print('\n\n--- 10.? ---')
+
+def run_query_6(df_batch: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
 
 
+def run_query_7(df_batch: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
+
+
+def run_query_8(df_batch: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
+
+
+def run_query_9(df_batch: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
+
+
+def run_query_10(df_batch: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
+
+
+def main() -> None:
+    """Main entrypoint for the processing job."""
+    
+    start = time.time()
+    
+    print("\n>> Loading batch data from HDFS...")
+    df_batch = load_csv_into_df("/user/root/data-lake/transform/batch_data.csv")
+    df_batch.show(5)
+    
+    print("\n>> Loading tectonic plates data from HDFS...")
+    df_plates = load_csv_into_df("/user/root/data-lake/transform/plate_polygons_wkt.csv")
+    df_plates.show(5)
+    
+    print("\n>> Running Query 1: 'query_text'...")
+    df_query_1 = run_query_1(df_batch)
+    
+    print("\n>> Running Query 2: 'query_text'...")
+    df_query_2 = run_query_2(df_batch)
+    
+    print("\n>> Running Query 3: 'query_text'...")
+    df_query_3 = run_query_3(df_batch)
+    
+    print("\n>> Running Query 4: 'query_text'...")
+    df_query_4 = run_query_4(df_batch)
+    
+    print("\n>> Running Query 5: 'query_text'...")
+    df_query_5 = run_query_5(df_batch)
+    
+    print("\n>> Running Query 6: 'query_text'...")
+    df_query_6 = run_query_6(df_batch)
+    
+    print("\n>> Running Query 7: 'query_text'...")
+    df_query_7 = run_query_7(df_batch)
+    
+    print("\n>> Running Query 8: 'query_text'...")
+    df_query_8 = run_query_8(df_batch)
+    
+    print("\n>> Running Query 9: 'query_text'...")
+    df_query_9 = run_query_9(df_batch)
+    
+    print("\n>> Running Query 10: 'query_text'...")
+    df_query_10 = run_query_10(df_batch)
+    
+    print(f"\n>> Processing finished in {time.time() - start:.2f} seconds.")
+
+if __name__ == "__main__":
+    main()
 
 
 

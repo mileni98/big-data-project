@@ -144,7 +144,7 @@ def main() -> None:
     save_dataframe_to_hdfs(df_batch, "/user/root/data-lake/transform/batch_data.csv")
     
     print("\n>> Saving tectonic plates data to HDFS...")
-    save_dataframe_to_hdfs(df_plates, "/user/root/data-lake/transform/tectonic_boundaries.csv")
+    save_dataframe_to_hdfs(df_plates, "/user/root/data-lake/transform/plate_polygons_wkt.csv")
 
     print(f"\n>> Preprocessing finished in {time.time() - start:.2f} seconds.")
 
