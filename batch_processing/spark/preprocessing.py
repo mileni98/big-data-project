@@ -106,12 +106,11 @@ def compute_distance_to_boundary(df_batch: DataFrame) -> DataFrame:
         .drop("boundary_geometry")
     
 
-def save_dataframe_to_hdfs(df: DataFrame, hdfs_path: str) -> None:
-    """Save a DataFrame to HDFS as a CSV file."""
+def save_dataframe_to_hdfs_parquet(df: DataFrame, hdfs_path: str) -> None:
+    """Save a DataFrame to HDFS as a parquet file."""
     df.write \
         .mode("overwrite") \
-        .option("header", "true") \
-        .csv(HDFS_NAMENODE + hdfs_path)
+        .parquet(HDFS_NAMENODE + hdfs_path)
 
 
 def main() -> None:
@@ -141,10 +140,10 @@ def main() -> None:
     df_batch.show(5)
     
     print("\n>> Saving processed batch data to HDFS...")
-    save_dataframe_to_hdfs(df_batch, "/user/root/data-lake/transform/batch_data.csv")
+    save_dataframe_to_hdfs_parquet(df_batch, "/user/root/data-lake/transform/batch_data_parquet")
     
     print("\n>> Saving tectonic plates data to HDFS...")
-    save_dataframe_to_hdfs(df_plates, "/user/root/data-lake/transform/plate_polygons_wkt.csv")
+    save_dataframe_to_hdfs_parquet(df_plates, "/user/root/data-lake/transform/plate_polygons_wkt_parquet")
 
     print(f"\n>> Preprocessing finished in {time.time() - start:.2f} seconds.")
 

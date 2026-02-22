@@ -2,7 +2,7 @@
 set -e
 
 # Flags to control which parts of the pipeline to run.
-RUN_SETUP=true
+RUN_SETUP=false
 RUN_BATCH=true
 RUN_STREAM=false
 
