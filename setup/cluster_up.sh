@@ -23,7 +23,7 @@ echo
 cd ../data
 echo "> Copying data to namenode..."
 docker cp earthquake_data.csv namenode:/batch_data.csv
-docker cp tectonic_plate_boundaries.csv namenode:/tectonic_boundaries.csv
+docker cp plate_polygons_wkt.csv namenode:/plate_polygons_wkt.csv
 sleep 3
 
 # Wait until HDFS is out of safe mode.

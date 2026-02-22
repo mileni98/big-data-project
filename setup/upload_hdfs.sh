@@ -8,4 +8,4 @@ hdfs dfs -mkdir -p /user/root/data-lake/transform
 
 # Copy local files to HDFS.
 hdfs dfs -copyFromLocal -f ./batch_data.csv /user/root/data-lake/raw/batch_data.csv
-hdfs dfs -copyFromLocal -f ./tectonic_boundaries.csv /user/root/data-lake/raw/tectonic_boundaries.csv
+hdfs dfs -copyFromLocal -f ./plate_polygons_wkt.csv /user/root/data-lake/raw/plate_polygons_wkt.csv

@@ -3,8 +3,8 @@ set -e
 
 # Flags to control which parts of the pipeline to run.
 RUN_SETUP=false
-RUN_BATCH=false
-RUN_STREAM=true
+RUN_BATCH=true
+RUN_STREAM=false
 
 # Absolute path to the root directory of the project.
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
