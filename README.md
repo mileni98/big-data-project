@@ -6,8 +6,7 @@
 Downloa data from following sources, rename if specified and put them in the data folder:
 - Earthquakes data used for batch processing [link](https://www.kaggle.com/datasets/danielpe/earthquakes), rename to 'earthquake_data.csv'.
 - Tectonic plates data used for batch processing [link](https://github.com/fraxen/tectonicplates/tree/master), download 'PB2002_plates.shp', 'PB2002_plates.dbf' and 'PB2002_plates.shx files'.
-- Stream Processing
-
+- Tsunami data used for stream processing [link](https://www.kaggle.com/datasets/andrewmvd/tsunami-dataset), rename to 'tsunami_dataset.csv'.
 
 Before going to the next steps run the helper script to convert the shapefile to a csv with WKT geometry format, which will be used in the batch processing step:
 ```

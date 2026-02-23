@@ -18,12 +18,13 @@ echo "> Copying HDFS upload script to namenode..."
 docker cp upload_hdfs.sh namenode:/upload_hdfs.sh
 sleep 3
 
-# Copying earthquake data and tectonic boundaries CSV files to the Namenode container.
+# Copying earthquake data, tectonic boundaries and tsunami data files to the Namenode container.
 echo 
 cd ../data
 echo "> Copying data to namenode..."
 docker cp earthquake_data.csv namenode:/batch_data.csv
 docker cp plate_polygons_wkt.csv namenode:/plate_polygons_wkt.csv
+docker cp tsunami_dataset.csv namenode:/tsunami_dataset.csv
 sleep 3
 
 # Wait until HDFS is out of safe mode.
@@ -48,7 +49,7 @@ sleep 3
 cd ../stream_processing
 echo
 echo "> Starting stream processing containers..."
-docker-compose up -d
+docker-compose up -d --build # --build to rebuild producer each time
 sleep 3
 
 # Fininshing cluster setup.

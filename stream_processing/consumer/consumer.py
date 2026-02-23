@@ -1,10 +1,10 @@
+from preprocessing import parse_stream
+
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.streaming import StreamingQuery
-from pyspark.sql.functions import col, from_json
-from pyspark.sql.types import StructType, StructField, StringType, FloatType
 
 
-TOPIC = "earthquakes"
+TOPIC = "tsunamis"
 
 
 def quiet_logs(sc):
@@ -36,26 +36,6 @@ def load_kafka_stream(topic: str = TOPIC) -> DataFrame:
         .load()
 
 
-def parse_stream(df_stream_raw: DataFrame) -> DataFrame:
-    """Parse the raw Kafka stream, extract the JSON string, and convert it to a structured DataFrame."""
-    # Cast key/value to STRING
-    df_stream = df_stream_raw.selectExpr(
-        "CAST(key AS STRING) AS kafka_key",
-        "CAST(value AS STRING) AS json_str",
-        "timestamp"
-    )
-    test_schema = StructType([
-        StructField("time", StringType(), True),
-        StructField("latitude", StringType(), True),
-        StructField("longitude", StringType(), True),
-        StructField("mag", StringType(), True)
-    ])
-
-    return df_stream \
-        .select(from_json(col("json_str"), test_schema).alias("data")) \
-        .select("data.*")
-        
-
 def run_query_1(df_stream: DataFrame) -> DataFrame:
     """query_text"""
     pass
@@ -81,7 +61,7 @@ def run_query_5(df_stream: DataFrame) -> DataFrame:
     pass
 
 
-def write_stream_to_elasticsearch(df_stream: DataFrame, index: str = TOPIC) -> StreamingQuery:
+def write_stream_to_elasticsearch(df_stream: DataFrame, index: str) -> StreamingQuery:
     """Write the stream to Elasticsearch."""
     return df_stream.writeStream \
         .outputMode("append") \
@@ -120,6 +100,7 @@ def main() -> None:
 
     # Write results to elastic searc and start the streaming processing
     print("\n>> Writing results to Elasticsearch...")
+    query = write_stream_to_elasticsearch(df_stream, index="query")
     #query_1 = write_stream_to_elasticsearch(df_query_1, index="query_1")
     #query_2 = write_stream_to_elasticsearch(df_query_2, index="query_2")
     #query_3 = write_stream_to_elasticsearch(df_query_3, index="query_3")
