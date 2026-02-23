@@ -1,15 +1,19 @@
-import os
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.streaming import StreamingQuery
 from pyspark.sql.functions import col, from_json
 from pyspark.sql.types import StructType, StructField, StringType, FloatType
 
+
 TOPIC = "earthquakes"
+
 
 def quiet_logs(sc):
   logger = sc._jvm.org.apache.log4j
   logger.LogManager.getLogger("org"). setLevel(logger.Level.ERROR)
   logger.LogManager.getLogger("akka").setLevel(logger.Level.ERROR)
 
+
+# Initialize spark
 spark = SparkSession \
     .builder \
     .appName('Stream Processing') \
@@ -22,45 +26,115 @@ spark = SparkSession \
 
 quiet_logs(spark)
 
-df_stream_raw = spark.readStream \
-    .format('kafka') \
-    .option("kafka.bootstrap.servers", "kafka1:19092,kafka2:19092") \
-    .option("subscribe", TOPIC) \
-    .load()
 
-# Cast key/value to STRING
-df_stream = df_stream_raw.selectExpr(
-    "CAST(key AS STRING) AS kafka_key",
-    "CAST(value AS STRING) AS json_str",
-    "timestamp"
-)
+def load_kafka_stream(topic: str = TOPIC) -> DataFrame:
+    """Load the Kafka stream from the topic into a Spark DataFrame."""
+    return spark.readStream \
+        .format('kafka') \
+        .option("kafka.bootstrap.servers", "kafka1:19092,kafka2:19092") \
+        .option("subscribe", topic) \
+        .load()
 
-test_schema = StructType([
-    StructField("time", StringType(), True),
-    StructField("latitude", StringType(), True),
-    StructField("longitude", StringType(), True),
-    StructField("mag", StringType(), True)
-])
 
-df_parsed_test = df_stream \
-    .select(from_json(col("json_str"), test_schema).alias("data")) \
-    .select("data.*")
+def parse_stream(df_stream_raw: DataFrame) -> DataFrame:
+    """Parse the raw Kafka stream, extract the JSON string, and convert it to a structured DataFrame."""
+    # Cast key/value to STRING
+    df_stream = df_stream_raw.selectExpr(
+        "CAST(key AS STRING) AS kafka_key",
+        "CAST(value AS STRING) AS json_str",
+        "timestamp"
+    )
+    test_schema = StructType([
+        StructField("time", StringType(), True),
+        StructField("latitude", StringType(), True),
+        StructField("longitude", StringType(), True),
+        StructField("mag", StringType(), True)
+    ])
+
+    return df_stream \
+        .select(from_json(col("json_str"), test_schema).alias("data")) \
+        .select("data.*")
+        
+
+def run_query_1(df_stream: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
+
+
+def run_query_2(df_stream: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
+
+
+def run_query_3(df_stream: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
+
+
+def run_query_4(df_stream: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
+
+
+def run_query_5(df_stream: DataFrame) -> DataFrame:
+    """query_text"""
+    pass
+
+
+def write_stream_to_elasticsearch(df_stream: DataFrame, index: str = TOPIC) -> StreamingQuery:
+    """Write the stream to Elasticsearch."""
+    return df_stream.writeStream \
+        .outputMode("append") \
+        .format("org.elasticsearch.spark.sql") \
+        .option("checkpointLocation", f"/tmp/es-checkpoints-{index}/") \
+        .option("es.nodes", "elasticsearch") \
+        .option("es.port", "9200") \
+        .option("es.resource", index) \
+        .start()
+
+
+def write_stream_to_console(df_stream: DataFrame) -> StreamingQuery:
+    """Write the stream to the console for debugging."""
+    return df_stream.writeStream \
+        .outputMode("append") \
+        .format("console") \
+        .option("truncate", "false") \
+        .start()
+
+
+def main() -> None:
+    """Main entrypoint for the consumer."""
+
+    print("\n>> Loading Kafka stream...")
+    df_stream_raw = load_kafka_stream(TOPIC)
+
+    print("\n>> Parsing stream...")
+    df_stream = parse_stream(df_stream_raw)
     
-# Write to Elasticsearch
-query = df_parsed_test.writeStream \
-    .outputMode("append") \
-    .format("org.elasticsearch.spark.sql") \
-    .option("checkpointLocation", "/tmp/es-checkpoints/") \
-    .option("es.nodes", "elasticsearch") \
-    .option("es.port", "9200") \
-    .option("es.resource", "earthquakes") \
-    .start()
+    print("\n>> Building streaming queries...")
+    #df_query_1 = run_query_1(df_stream)
+    #df_query_2 = run_query_2(df_stream)
+    #df_query_3 = run_query_3(df_stream)
+    #df_query_4 = run_query_4(df_stream)
+    #df_query_5 = run_query_5(df_stream)    
 
-# Display intermediate results for debugging
-#query = df_parsed_test.writeStream \
-#    .outputMode("append") \
-#    .format("console") \
-#    .option("truncate", "false") \
-#    .start()
+    # Write results to elastic searc and start the streaming processing
+    print("\n>> Writing results to Elasticsearch...")
+    #query_1 = write_stream_to_elasticsearch(df_query_1, index="query_1")
+    #query_2 = write_stream_to_elasticsearch(df_query_2, index="query_2")
+    #query_3 = write_stream_to_elasticsearch(df_query_3, index="query_3")
+    #query_4 = write_stream_to_elasticsearch(df_query_4, index="query_4")
+    #query_5 = write_stream_to_elasticsearch(df_query_5, index="query_5")
+    
+    # Debug
+    query = write_stream_to_console(df_stream)
+    #query_1 = write_stream_to_console(df_query_1)
+    #query_2 = write_stream_to_console(df_query_2)
+    #query_3 = write_stream_to_console(df_query_3)
+    #query_4 = write_stream_to_console(df_query_4)
+    #query_5 = write_stream_to_console(df_query_5)
+    
+    spark.streams.awaitAnyTermination()
 
-query.awaitTermination()
+if __name__ == "__main__":
+    main()
