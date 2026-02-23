@@ -73,7 +73,7 @@ def preprocess_plates_data(df_plates: DataFrame) -> DataFrame:
     
     # Get geometry for getting plate, and boundry for distance calculation
     return df_plates \
-        .withColumn("geometry", expr("ST_GeomFromWKT(wkt)")) \
+        .withColumn("geometry", expr("ST_MakeValid(ST_GeomFromWKT(wkt))")) \
         .withColumn("boundary_geometry", expr("ST_Boundary(geometry)")) \
         .drop("wkt") # This is geometry storet as text
 
@@ -107,6 +107,31 @@ def compute_distance_to_boundary(df_batch: DataFrame) -> DataFrame:
         ) \
         .drop("boundary_geometry")
     
+    
+def compute_shared_borders(df_plates: DataFrame) -> DataFrame:
+    """Compute share border segments between each pair of plates."""
+    p1 = df_plates.alias("p1")
+    p2 = df_plates.alias("p2")
+    
+    # Join plates and compute their shared borders
+    return p1 \
+        .join(
+            p2,
+            (
+                (col("p1.plate_name") < col("p2.plate_name")) & # To skip self join
+                (expr("ST_Touches(p1.geometry, p2.geometry)")) 
+            )
+        ) \
+        .withColumn(
+            "shared_border",
+            expr("ST_Intersection(ST_Boundary(p1.geometry), ST_Boundary(p2.geometry))")
+        ) \
+        .select(
+            col("p1.plate_name").alias("plate"),
+            col("p2.plate_name").alias("neighbor_plate"),
+            col("shared_border")
+        )
+
 
 def save_dataframe_to_hdfs_parquet(df: DataFrame, hdfs_path: str) -> None:
     """Save a DataFrame to HDFS as a parquet file."""
@@ -141,11 +166,18 @@ def main() -> None:
     df_batch = compute_distance_to_boundary(df_batch)
     df_batch.show(5)
     
+    print("\n>> Compute shared borders helper dataset...")
+    df_shared_borders = compute_shared_borders(df_plates)
+    df_shared_borders.show(5)
+    
     print("\n>> Saving processed batch data to HDFS...")
     save_dataframe_to_hdfs_parquet(df_batch, "/user/root/data-lake/transform/batch_data_parquet")
     
     print("\n>> Saving tectonic plates data to HDFS...")
     save_dataframe_to_hdfs_parquet(df_plates, "/user/root/data-lake/transform/plate_polygons_wkt_parquet")
+    
+    print("\n>> Saving shared borders data to HDFS...")
+    save_dataframe_to_hdfs_parquet(df_shared_borders, "/user/root/data-lake/transform/shared_borders_parquet")
 
     print(f"\n>> Preprocessing finished in {time.time() - start:.2f} seconds.")
 

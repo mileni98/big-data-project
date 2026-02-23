@@ -295,10 +295,58 @@ def run_query_8(df_batch: DataFrame) -> DataFrame:
         .orderBy("magnitude_range")
         
 
-def run_query_9(df_batch: DataFrame) -> DataFrame:
-    """Which pairs of tectonic plates exhibit the highest seismic activity along their shared boundary during one random peak seismic year? (Top 5) (note: in preprocessing make the boundaries segments)"""
-    pass
-
+def run_query_9(df_batch: DataFrame, df_shared_borders: DataFrame) -> DataFrame:
+    """Which pairs of tectonic plates exhibit the highest seismic activity along their shared boundary during one random peak seismic year, most amount of earthquakes with magnitute>7? (Top 5)"""
+    # Filter by earhquake
+    df_filtered = df_batch.filter(
+        (col("type") == "earthquake") &
+        (col("plate_name").isNotNull()) &
+        (col("magnitude") >= 0.1)
+    )
+    
+    # Extract year from timestam
+    df_time = df_filtered.withColumn("year", year(col("time")))
+    
+    # Get the peak seismic year
+    df_peak_year = df_time \
+        .filter(col("magnitude") > 7) \
+        .groupBy("year") \
+        .agg(count("*").alias("total_occurrences")) \
+        .orderBy(desc("total_occurrences")) \
+        .limit(1) \
+        .select("year")
+        
+    # Could use .collect() and just get the year
+    df_peak = df_time.join(df_peak_year, "year") 
+    
+    # Join with shared borders df
+    df_joined = df_peak.join(
+        broadcast(df_shared_borders),
+        df_peak["plate_name"] == df_shared_borders["plate"],
+    )
+    
+    # Calculate distance to all shared border segments
+    df_joined = df_joined.withColumn(
+        "distance_to_shared_border_km",
+        expr("""
+            ST_DistanceSphere(
+                location_geometry,
+                ST_ClosestPoint(shared_border, location_geometry)
+            ) / 1000
+        """)
+    )
+    
+    # Define window to rank shared borders per earthquake
+    windowSpec = Window.partitionBy("id").orderBy(asc("distance_to_shared_border_km"))
+    
+    return df_joined \
+        .withColumn("border_rank", row_number().over(windowSpec)) \
+        .filter(col("border_rank") == 1) \
+        .groupBy("year", "plate", "neighbor_plate") \
+        .agg(count("*").alias("total_occurrences")) \
+        .orderBy(desc("total_occurrences")) \
+        .limit(5)
+    
 
 def run_query_10(df_batch: DataFrame) -> DataFrame:
     """How does earthquake frequency decay following a major mainshock?"""
@@ -318,40 +366,45 @@ def main() -> None:
     df_plates = load_parquet_into_df("/user/root/data-lake/transform/plate_polygons_wkt_parquet")
     df_plates.show(5)
     
-    print("\n>> Running Query 1: 'How often do sonic_booms, quarry_blasts, nuclear_explosion and explosions occur each year?'...")
-    df_query_1 = run_query_1(df_batch)
-    df_query_1.show()
-        
-    print("\n>> Running Query 2: 'What is the total number of earthquakes with magnitude over 5 for each decade grouped into ranges?'...")
-    df_query_2 = run_query_2(df_batch)
-    df_query_2.show()
+    print("\n>> Loading helper shared borders data from HDFS...")
+    df_shared_borders = load_parquet_into_df("/user/root/data-lake/transform/shared_borders_parquet")
+    df_shared_borders.show(5)
     
-    print("\n>> Running Query 3: 'What are the maximum depths and magnitudes recorded for earthquakes in the 20th and 21th centuries, including where they occurred?'...")
-    df_query_3 = run_query_3(df_batch)
-    df_query_3.show()
+    #print("\n>> Running Query 1: 'How often do sonic_booms, quarry_blasts, nuclear_explosion and explosions #occur each year?'...")
+    #df_query_1 = run_query_1(df_batch)
+    #df_query_1.show()
+    #    
+    #print("\n>> Running Query 2: 'What is the total number of earthquakes with magnitude over 5 for each #decade grouped into ranges?'...")
+    #df_query_2 = run_query_2(df_batch)
+    #df_query_2.show()
+    #
+    #print("\n>> Running Query 3: 'What are the maximum depths and magnitudes recorded for earthquakes in the #20th and 21th centuries, including where they occurred?'...")
+    #df_query_3 = run_query_3(df_batch)
+    #df_query_3.show()
+    #
+    #print("\n>> Running Query 4: 'Does the change of seasons influence the frequency and intensity of #earthquakes across tectonic plates?'...")
+    #df_query_4 = run_query_4(df_batch)
+    #df_query_4.show()
+    #
+    #print("\n>> Running Query 5: 'Are stronger earthquakes statistically closer to the tectonic plate #boundaries?'...")
+    #df_query_5 = run_query_5(df_batch)
+    #df_query_5.show()
+    #
+    #print("\n>> Running Query 6: 'Does increasing number of stations reduce uncertainty in earthquake #magnitude and depth estimation?'...")
+    #df_query_6 = run_query_6(df_batch)
+    #df_query_6.show()
+    #
+    #print("\n>> Running Query 7: 'Has the accuracy and quality of seizmic measurement improved over the #decades?'...")
+    #df_query_7 = run_query_7(df_batch)
+    #df_query_7.show()
+    #    
+    #print("\n>> Running Query 8: 'Which magnitute calculation method performs best for different magnitude #ranges?'...")
+    #df_query_8 = run_query_8(df_batch)
+    #df_query_8.show()
     
-    print("\n>> Running Query 4: 'Does the change of seasons influence the frequency and intensity of earthquakes across tectonic plates?'...")
-    df_query_4 = run_query_4(df_batch)
-    df_query_4.show()
-    
-    print("\n>> Running Query 5: 'Are stronger earthquakes statistically closer to the tectonic plate boundaries?'...")
-    df_query_5 = run_query_5(df_batch)
-    df_query_5.show()
-    
-    print("\n>> Running Query 6: 'Does increasing number of stations reduce uncertainty in earthquake magnitude and depth estimation?'...")
-    df_query_6 = run_query_6(df_batch)
-    df_query_6.show()
-    
-    print("\n>> Running Query 7: 'Has the accuracy and quality of seizmic measurement improved over the decades?'...")
-    df_query_7 = run_query_7(df_batch)
-    df_query_7.show()
-        
-    print("\n>> Running Query 8: 'Which magnitute calculation method performs best for different magnitude ranges?'...")
-    df_query_8 = run_query_8(df_batch)
-    df_query_8.show()
-    
-    print("\n>> Running Query 9: 'query_text'...")
-    df_query_9 = run_query_9(df_batch)
+    print("\n>> Which pairs of tectonic plates exhibit the highest seismic activity along their shared boundary during one random peak seismic year, most amount of earthquakes with magnitute>7? (Top 5)'...")
+    df_query_9 = run_query_9(df_batch, df_shared_borders)
+    df_query_9.show()
     
     print("\n>> Running Query 10: 'query_text'...")
     df_query_10 = run_query_10(df_batch)
