@@ -198,7 +198,6 @@ def run_query_5(df_batch: DataFrame) -> DataFrame:
     ).orderBy(desc("magnitude_category"))
     
 
-
 def run_query_6(df_batch: DataFrame) -> DataFrame:
     """Does increasing number of stations reduce uncertainty in earthquake magnitude and depth estimation?"""
     # Filter by earhquake and non empty stations
@@ -349,9 +348,44 @@ def run_query_9(df_batch: DataFrame, df_shared_borders: DataFrame) -> DataFrame:
     
 
 def run_query_10(df_batch: DataFrame) -> DataFrame:
-    """How does earthquake frequency decay following a major mainshock?"""
-    pass
+    """How does earthquake frequency evolve around a major earhtquake (magnitude > 7) in the radius of 100km?"""
+    # Filter by earhquake
+    df_filtered = df_batch.filter((col("type") == "earthquake"))
+    
+    # FIlter mainshocks
+    df_mainshock = df_filtered \
+        .filter(col("magnitude") >= 7) \
+        .select(
+            col("id").alias("mainshock_id"),
+            col("time").alias("mainshock_time"),
+            col("location_geometry").alias("mainshock_geometry")
+        )
 
+    # Join mainshocks with all earthquakes fo find within range
+    df_joined = df_mainshock.join(
+        df_filtered,
+        (datediff(df_filtered["time"], df_mainshock["mainshock_time"]) >= -3) &
+        (datediff(df_filtered["time"], df_mainshock["mainshock_time"]) <= 7) &
+        (expr("""
+            ST_DistanceSphere(
+                mainshock_geometry,
+                location_geometry
+            ) <= 100000
+        """)
+        )
+    )
+
+    # Calculate day difference 
+    df_result = df_joined.withColumn(
+        "day_diff",
+        datediff(col("time"), col("mainshock_time"))
+    )
+    
+    return df_result.groupBy("day_diff").agg(
+        count("*").alias("total_occurrences"),
+        #avg("magnitude").alias("average_magnitude") # Takes too much time
+    ).orderBy("day_diff")
+   
 
 def main() -> None:
     """Main entrypoint for the processing job."""
@@ -370,44 +404,45 @@ def main() -> None:
     df_shared_borders = load_parquet_into_df("/user/root/data-lake/transform/shared_borders_parquet")
     df_shared_borders.show(5)
     
-    #print("\n>> Running Query 1: 'How often do sonic_booms, quarry_blasts, nuclear_explosion and explosions #occur each year?'...")
-    #df_query_1 = run_query_1(df_batch)
-    #df_query_1.show()
-    #    
-    #print("\n>> Running Query 2: 'What is the total number of earthquakes with magnitude over 5 for each #decade grouped into ranges?'...")
-    #df_query_2 = run_query_2(df_batch)
-    #df_query_2.show()
-    #
-    #print("\n>> Running Query 3: 'What are the maximum depths and magnitudes recorded for earthquakes in the #20th and 21th centuries, including where they occurred?'...")
-    #df_query_3 = run_query_3(df_batch)
-    #df_query_3.show()
-    #
-    #print("\n>> Running Query 4: 'Does the change of seasons influence the frequency and intensity of #earthquakes across tectonic plates?'...")
-    #df_query_4 = run_query_4(df_batch)
-    #df_query_4.show()
-    #
-    #print("\n>> Running Query 5: 'Are stronger earthquakes statistically closer to the tectonic plate #boundaries?'...")
-    #df_query_5 = run_query_5(df_batch)
-    #df_query_5.show()
-    #
-    #print("\n>> Running Query 6: 'Does increasing number of stations reduce uncertainty in earthquake #magnitude and depth estimation?'...")
-    #df_query_6 = run_query_6(df_batch)
-    #df_query_6.show()
-    #
-    #print("\n>> Running Query 7: 'Has the accuracy and quality of seizmic measurement improved over the #decades?'...")
-    #df_query_7 = run_query_7(df_batch)
-    #df_query_7.show()
-    #    
-    #print("\n>> Running Query 8: 'Which magnitute calculation method performs best for different magnitude #ranges?'...")
-    #df_query_8 = run_query_8(df_batch)
-    #df_query_8.show()
+    print("\n>> Running Query 1: 'How often do sonic_booms, quarry_blasts, nuclear_explosion and explosions occur each year?'...")
+    df_query_1 = run_query_1(df_batch)
+    df_query_1.show()
+        
+    print("\n>> Running Query 2: 'What is the total number of earthquakes with magnitude over 5 for each decade grouped into ranges?'...")
+    df_query_2 = run_query_2(df_batch)
+    df_query_2.show()
+    
+    print("\n>> Running Query 3: 'What are the maximum depths and magnitudes recorded for earthquakes in he #20th and 21th centuries, including where they occurred?'...")
+    df_query_3 = run_query_3(df_batch)
+    df_query_3.show()
+    
+    print("\n>> Running Query 4: 'Does the change of seasons influence the frequency and intensity of earthquakes across tectonic plates?'...")
+    df_query_4 = run_query_4(df_batch)
+    df_query_4.show()
+    
+    print("\n>> Running Query 5: 'Are stronger earthquakes statistically closer to the tectonic plate boundaries?'...")
+    df_query_5 = run_query_5(df_batch)
+    df_query_5.show()
+    
+    print("\n>> Running Query 6: 'Does increasing number of stations reduce uncertainty in earthquake magnitude and depth estimation?'...")
+    df_query_6 = run_query_6(df_batch)
+    df_query_6.show()
+    
+    print("\n>> Running Query 7: 'Has the accuracy and quality of seizmic measurement improved over the decades?'...")
+    df_query_7 = run_query_7(df_batch)
+    df_query_7.show()
+        
+    print("\n>> Running Query 8: 'Which magnitute calculation method performs best for different magnitude ranges?'...")
+    df_query_8 = run_query_8(df_batch)
+    df_query_8.show()
     
     print("\n>> Which pairs of tectonic plates exhibit the highest seismic activity along their shared boundary during one random peak seismic year, most amount of earthquakes with magnitute>7? (Top 5)'...")
     df_query_9 = run_query_9(df_batch, df_shared_borders)
     df_query_9.show()
     
-    print("\n>> Running Query 10: 'query_text'...")
+    print("\n>> Running Query 10: 'How does earthquake frequency evolve around a major earhtquake (magnitude > 7) in the radius of 100km?'...")
     df_query_10 = run_query_10(df_batch)
+    df_query_10.show()
     
     print(f"\n>> Processing finished in {time.time() - start:.2f} seconds.")
 
