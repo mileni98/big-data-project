@@ -46,11 +46,13 @@ def preprocess_batch_data(df_batch: DataFrame) -> DataFrame:
         col("longitude").cast(FloatType()),
         col("depth").cast(FloatType()),
         col("mag").cast(FloatType()).alias("magnitude"),
+        col("magType").alias("magnitude_type"),
+        col("nst").cast(IntegerType()).alias("num_stations"),
         col("type"),
         col("horizontalError").cast(FloatType()).alias("horizontal_error"),
         col("depthError").cast(FloatType()).alias("depth_error"),
         col("magError").cast(FloatType()).alias("magnitude_error"),
-        col("locationSource").alias("location_source"),
+        col("place").alias("place"),
     )
         
     # Add geometry column using Sedona's ST_Point function
