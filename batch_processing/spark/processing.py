@@ -436,7 +436,7 @@ def main() -> None:
     df_query_8 = run_query_8(df_batch)
     df_query_8.show()
     
-    print("\n>> Which pairs of tectonic plates exhibit the highest seismic activity along their shared boundary during one random peak seismic year, most amount of earthquakes with magnitute>7? (Top 5)'...")
+    print("\n>> Running Query 9: 'Which pairs of tectonic plates exhibit the highest seismic activity along their shared boundary during one random peak seismic year, most amount of earthquakes with magnitute>7? (Top 5)'...")
     df_query_9 = run_query_9(df_batch, df_shared_borders)
     df_query_9.show()
     

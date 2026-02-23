@@ -3,8 +3,8 @@ set -e
 
 # Flags to control which parts of the pipeline to run.
 RUN_SETUP=false
-RUN_BATCH=true
-RUN_STREAM=false
+RUN_BATCH=false
+RUN_STREAM=true
 
 # Absolute path to the root directory of the project.
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,7 +33,7 @@ if [ "$RUN_STREAM" = true ] ; then
     cd "$ROOT_DIR/stream_processing"
     echo "> Starting Kafka producer (detached)..."
     # Before starting, kill any existing producer process and redirect logs to the main container log.
-    docker-compose exec -d kafka_producer sh -c "pkill -f producer.py || true; python -u producer.py >> /proc/1/fd/1 2>&1"
+    docker-compose exec -d kafka_producer sh -c "pkill -f producer.py || true; python -u producer.py >> /proc/1/fd/1 2>&1" # Redirect stdout to main container logs
     echo "Successfully started Kafka producer."
     sleep 3
 

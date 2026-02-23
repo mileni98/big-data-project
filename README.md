@@ -1,16 +1,22 @@
 # Big data project
 
 
-downloa plates data from https://github.com/fraxen/tectonicplates/tree/master
-and downloa PB2002_plates.shp, PB2002_plates.dbf, PB2002_plates.shx files and put them in the data folder.
+### 1. Prepare Data
 
-Run the helper script to convert the shapefile to a csv with WKT geometry format, which will be used in the batch processing step:
+Downloa data from following sources, rename if specified and put them in the data folder:
+- Earthquakes data used for batch processing [link](https://www.kaggle.com/datasets/danielpe/earthquakes), rename to 'earthquake_data.csv'.
+- Tectonic plates data used for batch processing [link](https://github.com/fraxen/tectonicplates/tree/master), download 'PB2002_plates.shp', 'PB2002_plates.dbf' and 'PB2002_plates.shx files'.
+- Stream Processing
+
+
+Before going to the next steps run the helper script to convert the shapefile to a csv with WKT geometry format, which will be used in the batch processing step:
 ```
 python batch_processing/spark/helper_script.py
 ```
-(! NOTE currently spark incompatible with sedona to load directly shapefile)
+! NOTE current spark version is incompatible with sedona to directly load the shapefile
 
-### 1. Arhitecture Setup
+
+### 2. Arhitecture Setup
 
 Go to the root older and run the following command to run the full pipeline:
 
@@ -40,7 +46,7 @@ Arhicecture diagram:
 
 ---
 
-### 2. Data Upload Verification
+### 3. Data Upload Verification
 
 Verify that data has been successfully copied to datanodes - http://localhost:9870/explorer.html#/user/root/data-lake
 
@@ -51,14 +57,14 @@ Verify that data has been successfully copied to datanodes - http://localhost:98
 Make sure that the RUN_BATCH tag in the run_pipeline.sh is set to true. If you want to run only batch processing set the other flags (RUN_SETUP, RUN_STREAM) to false.
 
 There are 2 scripts:
-- Preprocessing script - Which loads raw data from data-lake, does some cleaning and stores it back to the transformation zone in data-lake.
-- Processing script - Which loads preprocessed data from the transformation zone in data-lake, does aggregations, displays results and stores final results in PostgreSQL database.
+- Preprocessing script - Which loads raw data from data-lake, does cleaning, plate assignment and stores it back to the transformation zone in data-lake.
+- Processing script - Which loads preprocessed data from the transformation zone in data-lake, does 10 different useful queries, displays results in terminal and stores final results in PostgreSQL database.
 
 To confirm all is working well, Spark Master UI is on http://localhost:8080. Once the app is running there is information about the current run on http://localhost:4040 .
 
 --- 
 
-### 3. Batch Processing Visualisation
+### 4. Batch Processing Visualisation
 
 Once the processing has finished, open http://localhost:3000/admin/databases -> Add Database -> Connection String (jdbc:postgresql://postgresql:5432/big_data
 )  and press 'Sync database schema'.
@@ -69,18 +75,18 @@ Once the processing has finished, open http://localhost:3000/admin/databases -> 
 - Go to http://localhost:3000/browse/databases and choose the 'big_data', go to Visualization and visualize the tables.
 
 
-### 4. Streaming Processing
+### 5. Streaming Processing
 
 Make sure that the RUN_STREAM tag in the run_pipeline.sh is set to true. If you want to run only stream processing set the other flags (RUN_SETUP, RUN_BATCH) to false.
 
 There two major components of the streaming pipeline:
-- Producer - Simulates real time data ingestion by continuosly reading records from a SCV file and publishing them to a Kafka topic.
+- Producer - Simulates real time data ingestion by continuosly reading records from a CSV file and publishing them to a Kafka topic.
 - Consumer - Reads data from the Kafka topic in real time, parses and processes the incoming events using Spark Structured Streaming and stores the results in Elastic Search for visualization.
 
 To verify streaming ingestion open the kafdrop UI on http://localhost:9008 and check that messages are being sent for the topic "earthquakes" -> View Messages.
 
 ---
-### 5. Stream Processing Visualisation
+### 6. Stream Processing Visualisation
 
 Once the processing starts results are visible in both the terminal and stored in Elastic Search. Ensure Elastic Search service is running on http://localhost:9200/.
 
@@ -89,5 +95,30 @@ If all is running well, open Kibana on http://localhost:5601 to visualize the da
 * If its your first time running Kibana go to Analytics -> Discover -> Create Data View -> Select "earthquakes" index -> Choose the Timestamp field -> Save Data View to Kibana.
 
 
-### 6. Queries List
-// TODO
+### 7. Queries List
+
+Batch Processing:
+
+1. *How often do sonic_booms, quarry_blasts, nuclear_explosion and explosions occur each year?*
+
+2. *What is the total number of earthquakes with magnitude over 5 for each decade grouped into ranges?*
+
+3. *What are the maximum depths and magnitudes recorded for earthquakes in he #20th and 21th centuries, including where they occurred?*
+
+4. *Does the change of seasons influence the frequency and intensity of earthquakes across tectonic plates?*
+
+5. *Are stronger earthquakes statistically closer to the tectonic plate boundaries?*
+
+6. *Does increasing number of stations reduce uncertainty in earthquake magnitude and depth estimation?*
+
+7. *Has the accuracy and quality of seizmic measurement improved over the decades?*
+
+8. *Which magnitute calculation method performs best for different magnitude ranges?*
+
+9. *Which pairs of tectonic plates exhibit the highest seismic activity along their shared boundary during one random peak seismic year, most amount of earthquakes with magnitute>7? (Top 5)*
+
+10. *How does earthquake frequency evolve around a major earhtquake (magnitude > 7) in the radius of 100km?*
+
+Stream Processing:
+
+1.
