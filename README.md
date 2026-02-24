@@ -65,8 +65,7 @@ To confirm all is working well, Spark Master UI is on http://localhost:8080. Onc
 
 ### 4. Batch Processing Visualisation
 
-Once the processing has finished, open http://localhost:3000/admin/databases -> Add Database -> Connection String (jdbc:postgresql://postgresql:5432/big_data
-)  and press 'Sync database schema'.
+Once the processing has finished, open http://localhost:3000/admin/databases -> Add Database -> Connection String (jdbc:postgresql://postgresql:5432/big_data)  and press 'Sync database schema'.
 
 
 * If this is the first time running metabase, create an admin account and add the big_data database.

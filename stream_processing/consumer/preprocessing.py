@@ -1,6 +1,6 @@
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, from_json
-from pyspark.sql.types import StructType, StructField, StringType, FloatType
+from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType
 
 
 def parse_stream(df_stream_raw: DataFrame) -> DataFrame:
@@ -15,26 +15,32 @@ def parse_stream(df_stream_raw: DataFrame) -> DataFrame:
     # Define the schema for the tsunami data
     tsunami_schema = StructType([
         StructField("ID", StringType(), True),
-        StructField("YEAR", StringType(), True),
-        StructField("MONTH", StringType(), True),
-        StructField("DAY", StringType(), True),
-        StructField("HOUR", StringType(), True),
-        StructField("MINUTE", StringType(), True),
-        StructField("LATITUDE", StringType(), True),
-        StructField("LONGITUDE", StringType(), True),
+        
+        StructField("YEAR", IntegerType(), True),
+        StructField("MONTH", IntegerType(), True),
+        StructField("DAY", IntegerType(), True),
+        StructField("HOUR", IntegerType(), True),
+        StructField("MINUTE", IntegerType(), True),
+        
+        StructField("LATITUDE", FloatType(), True),
+        StructField("LONGITUDE", FloatType(), True),
+        
         StructField("LOCATION_NAME", StringType(), True),
         StructField("COUNTRY", StringType(), True),
         StructField("REGION", StringType(), True),
         StructField("CAUSE", StringType(), True),
         StructField("EVENT_VALIDITY", StringType(), True),
-        StructField("EQ_MAGNITUDE", StringType(), True),
-        StructField("EQ_DEPTH", StringType(), True),
-        StructField("TS_INTENSITY", StringType(), True),
+        
+        StructField("EQ_MAGNITUDE", FloatType(), True),
+        StructField("EQ_DEPTH", FloatType(), True),
+        StructField("TS_INTENSITY", FloatType(), True),
+        
         StructField("DAMAGE_TOTAL_DESCRIPTION", StringType(), True),
         StructField("HOUSES_TOTAL_DESCRIPTION", StringType(), True),
         StructField("DEATHS_TOTAL_DESCRIPTION", StringType(), True),
-        StructField("URL", StringType(), True),
-        StructField("COMMENTS", StringType(), True),
+        
+        #StructField("URL", StringType(), True),
+        #StructField("COMMENTS", StringType(), True),
     ])
 
     # Parse JSON and assign schema

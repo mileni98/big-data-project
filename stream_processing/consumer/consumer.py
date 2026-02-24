@@ -36,6 +36,23 @@ def load_kafka_stream(topic: str = TOPIC) -> DataFrame:
         .load()
 
 
+def load_parquet_into_df(hdfs_path: str) -> DataFrame:
+    """Load a parquet file from HDFS into a Spark DataFrame."""
+    return spark.read.parquet(HDFS_NAMENODE + hdfs_path)
+
+
+def load_postgres_to_dataframe(table_name: str) -> DataFrame:
+    """Load a PostgreSQL table into a Spark DataFrame."""
+    return spark.read \
+        .format('jdbc') \
+        .option('url', 'jdbc:postgresql://postgresql:5432/big_data') \
+        .option('driver', 'org.postgresql.Driver') \
+        .option('dbtable', f'public.{table_name}') \
+        .option('user', 'postgres') \
+        .option('password', 'postgres') \
+        .load()
+
+
 def run_query_1(df_stream: DataFrame) -> DataFrame:
     """query_text"""
     pass

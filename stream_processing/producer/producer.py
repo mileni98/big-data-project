@@ -12,7 +12,7 @@ HDFS_NAMENODE = os.environ["HDFS_NAMENODE"]
 KAFKA_BROKERS = os.environ["KAFKA_BROKERS"]
 
 TOPIC = "tsunamis"
-SEND_DELAY_MS = 50
+SEND_DELAY_MS = 200 # 5 records per second, for 3000 data around 10 minutes of streaming data 
 
 
 def create_kafka_producer() -> KafkaProducer:

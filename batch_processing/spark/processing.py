@@ -33,7 +33,7 @@ def load_parquet_into_df(hdfs_path: str) -> DataFrame:
     
     
 def save_dataframe_to_postgres(df: DataFrame, table_name: str) -> None:
-    """Save a Spark DataFrame to a PostgreSQL table."""
+    """Save a Spark DataFrame to a PostgreSQL table. NOTE: Overwrites the table if it already exists."""
     df.write \
         .format('jdbc') \
         .option('url', 'jdbc:postgresql://postgresql:5432/big_data') \
@@ -387,6 +387,14 @@ def run_query_10(df_batch: DataFrame) -> DataFrame:
     ).orderBy("day_diff")
    
 
+def run_save_show(df: DataFrame, table_name: str) -> None:
+    """Helper function to save a dataframe to postgres and show it."""
+    df_cached = df.cache()  # Cache to prevent 2 executions on both save and show
+    save_dataframe_to_postgres(df_cached, table_name)
+    df_cached.show()
+    df_cached.unpersist() # Free memory after use
+
+
 def main() -> None:
     """Main entrypoint for the processing job."""
     
@@ -405,46 +413,37 @@ def main() -> None:
     df_shared_borders.show(5)
     
     print("\n>> Running Query 1: 'How often do sonic_booms, quarry_blasts, nuclear_explosion and explosions occur each year?'...")
-    df_query_1 = run_query_1(df_batch)
-    df_query_1.show()
-        
+    run_save_show(run_query_1(df_batch), "query_1_yearly_explosion_counts")
+            
     print("\n>> Running Query 2: 'What is the total number of earthquakes with magnitude over 5 for each decade grouped into ranges?'...")
-    df_query_2 = run_query_2(df_batch)
-    df_query_2.show()
-    
+    run_save_show(run_query_2(df_batch), "query_2_decade_magnitude_distribution")
+
     print("\n>> Running Query 3: 'What are the maximum depths and magnitudes recorded for earthquakes in he #20th and 21th centuries, including where they occurred?'...")
-    df_query_3 = run_query_3(df_batch)
-    df_query_3.show()
-    
+    run_save_show(run_query_3(df_batch), "query_3_century_extreme_earthquakes")
+
     print("\n>> Running Query 4: 'Does the change of seasons influence the frequency and intensity of earthquakes across tectonic plates?'...")
-    df_query_4 = run_query_4(df_batch)
-    df_query_4.show()
-    
+    run_save_show(run_query_4(df_batch), "query_4_seasonal_plate_activity")
+
     print("\n>> Running Query 5: 'Are stronger earthquakes statistically closer to the tectonic plate boundaries?'...")
-    df_query_5 = run_query_5(df_batch)
-    df_query_5.show()
-    
+    run_save_show(run_query_5(df_batch), "query_5_magnitude_distance_to_plate_boundary")
+
     print("\n>> Running Query 6: 'Does increasing number of stations reduce uncertainty in earthquake magnitude and depth estimation?'...")
-    df_query_6 = run_query_6(df_batch)
-    df_query_6.show()
-    
+    run_save_show(run_query_6(df_batch), "query_6_stations_error_analysis")
+
     print("\n>> Running Query 7: 'Has the accuracy and quality of seizmic measurement improved over the decades?'...")
-    df_query_7 = run_query_7(df_batch)
-    df_query_7.show()
-        
+    run_save_show(run_query_7(df_batch), "query_7_measurement_quality_over_decades")
+
     print("\n>> Running Query 8: 'Which magnitute calculation method performs best for different magnitude ranges?'...")
-    df_query_8 = run_query_8(df_batch)
-    df_query_8.show()
+    run_save_show(run_query_8(df_batch), "query_8_magnitude_method_comparison")
     
     print("\n>> Running Query 9: 'Which pairs of tectonic plates exhibit the highest seismic activity along their shared boundary during one random peak seismic year, most amount of earthquakes with magnitute>7? (Top 5)'...")
-    df_query_9 = run_query_9(df_batch, df_shared_borders)
-    df_query_9.show()
+    run_save_show(run_query_9(df_batch, df_shared_borders), "query_9_peak_plate_borders")
     
     print("\n>> Running Query 10: 'How does earthquake frequency evolve around a major earhtquake (magnitude > 7) in the radius of 100km?'...")
-    df_query_10 = run_query_10(df_batch)
-    df_query_10.show()
+    run_save_show(run_query_10(df_batch), "query_10_aftershock_evolution")
     
-    print(f"\n>> Processing finished in {time.time() - start:.2f} seconds.")
+    print(f"\n>> Processing finished in {time.time() - start:.2f} seconds.")   
+    spark.stop()
 
 
 if __name__ == "__main__":
