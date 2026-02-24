@@ -41,7 +41,9 @@ If you want to shut down the cluster, from the root folder run:
 
 Arhicecture diagram:
 
-// TODO - Add architecture diagram
+
+![architecture.png](architecture.png)
+
 
 ---
 
@@ -97,6 +99,7 @@ If all is running well, open Kibana on http://localhost:5601 to visualize the da
 DELETE 'index_name'
 ```
 
+---
 
 ### 7. Queries List
 
