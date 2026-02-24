@@ -90,7 +90,12 @@ Once the processing starts results are visible in both the terminal and stored i
 
 If all is running well, open Kibana on http://localhost:5601 to visualize the data, by opening a saved data view.
 
-* If its your first time running Kibana go to Analytics -> Discover -> Create Data View -> Select "earthquakes" index -> Choose the Timestamp field -> Save Data View to Kibana.
+* If its your first time running Kibana go to Analytics -> Discover -> Create Data View -> Select "query_{no}" index -> Choose the Timestamp field -> Save Data View to Kibana.
+
+* To delete index in the meanwhile, go to Dev Tools and run the following command:
+```
+DELETE 'index_name'
+```
 
 
 ### 7. Queries List
@@ -119,4 +124,12 @@ Batch Processing:
 
 Stream Processing:
 
-1.
+1. *What is the number of tsunami events and their maximum and average intensity in 1 minute windows per tectonic plate (top 10 most active plates)?*
+
+2. *query_text*
+
+3. *query_text*
+
+4. *query_text*
+
+5. *query_text*
