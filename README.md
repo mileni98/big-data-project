@@ -74,6 +74,32 @@ Once the processing has finished, open http://localhost:3000/admin/databases -> 
 
 - Go to http://localhost:3000/browse/databases and choose the 'big_data', go to Visualization and visualize the tables.
 
+- For specific queries, go to Collections -> Your perosnal Collection -> New -> SQL Query, and paste one of the following queries:
+
+Query 1:
+```
+SELECT * 
+FROM query_10_aftershock_evolution
+WHERE day_diff < 6
+ORDER BY day_diff;
+```
+Query 2:
+
+```
+SELECT season, SUM(total_occurrences) as total_season_occurance, AVG(average_magnitude) as average_season_magnitude
+FROM query_4_seasonal_plate_activity
+GROUP BY season
+ORDER BY total_season_occurance DESC;
+```
+Query 3:
+```
+SELECT year, type, total_occurrences
+FROM query_1_yearly_explosion_counts
+ORDER BY year
+```
+*Select bar display, and for x-axis chose year and type, and for y-axis chose total_occurrences.*
+
+---
 
 ### 5. Streaming Processing
 
