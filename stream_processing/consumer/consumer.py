@@ -102,12 +102,12 @@ def run_query_1(df_stream: DataFrame, df_plates: DataFrame) -> DataFrame:
             col("plate_name"),
         ) \
         .agg(
-            count("*").alias("tsunami_count_1m"),
-            max("ts_intensity").alias("max_intensity_1m"),
-            avg("ts_intensity").alias("avg_intensity_1m"),
+            count("*").alias("tsunami_count"),
+            max("ts_intensity").alias("max_intensity"),
+            avg("ts_intensity").alias("avg_intensity"),
         ) \
         # For live leaderboard uncomment, change mode to 'complete' and disable writing to Elastic Search
-        #.orderBy(desc("tsunami_count_1m")) \
+        #.orderBy(desc("tsunami_count")) \
         #.limit(10) \
         #.orderBy("window")
             
@@ -115,28 +115,111 @@ def run_query_1(df_stream: DataFrame, df_plates: DataFrame) -> DataFrame:
         col("window.start").cast("timestamp").alias("window_start"),
         col("window.end").cast("timestamp").alias("window_end"),
         "plate_name",
-        "tsunami_count_1m",
-        "max_intensity_1m",
-        "avg_intensity_1m",
+        "tsunami_count",
+        "max_intensity",
+        "avg_intensity",
     )
     
+
+def run_query_2(df_stream: DataFrame) -> DataFrame:
+    """What are the average damage cost and houses destroyed by tsunamis per region (Mediteranian, Alaskan...)?"""
+    # Convert damages to numbers
+    df_stream_numeric = df_stream \
+        .withColumn(
+            "damage_severity",
+            when(col("damage_total_description") == "Limited (<$1 million)", 1)
+            .when(col("damage_total_description") == "Moderate (~$1 to $5 million)", 2)
+            .when(col("damage_total_description") == "Severe (~$5 to $24 million)", 3)
+            .when(col("damage_total_description") == "Extreme (~$25 million or more)", 4)
+            .otherwise(None)
+        ) \
+        .withColumn(
+            "houses_severity",
+            when(col("houses_total_description") == "Few (~1 to 50 houses)", 1)
+            .when(col("houses_total_description") == "Some (~51 to 100 houses)", 2)
+            .when(col("houses_total_description") == "Many (~101 to 1000 houses)", 3)
+            .when(col("houses_total_description") == "Very Many (~1001 or more houses)", 4)
+            .otherwise(None)
+        )
+        
+    # Aggregate per region over 1 minute window, rounded
+    df_aggregated = df_stream_numeric \
+        .withWatermark("timestamp", "10 seconds") \
+        .groupBy(
+            window(col("timestamp"), "1 minute"),
+            col("region")
+        ) \
+        .agg(
+            count("*").alias("tsunami_count"),
+            count("damage_severity").alias("damage_reports"),
+            round(avg("damage_severity"), 0).alias("avg_damage_severity"),
+            count("houses_severity").alias("house_reports"),
+            round(avg("houses_severity"), 0).alias("avg_houses_severity")
+        )
     
-def run_query_2(df_stream: DataFrame, df_plates: DataFrame) -> DataFrame:
-    """query_text"""
-    pass    
+    # COnvert numbers back to descriptions
+    df_result = df_aggregated \
+        .withColumn(
+            "avg_damage_severity",
+            when(col("avg_damage_severity") == 1, "Limited (<$1 million)")
+            .when(col("avg_damage_severity") == 2, "Moderate (~$1 to $5 million)")
+            .when(col("avg_damage_severity") == 3, "Severe (~$5 to $24 million)")
+            .when(col("avg_damage_severity") == 4, "Extreme (~$25 million or more)")
+        ) \
+        .withColumn(
+            "avg_houses_severity",
+            when(col("avg_houses_severity") == 1, "Few (~1 to 50 houses)")
+            .when(col("avg_houses_severity") == 2, "Some (~51 to 100 houses)")
+            .when(col("avg_houses_severity") == 3, "Many (~101 to 1000 houses)")
+            .when(col("avg_houses_severity") == 4, "Very Many (~1001 or more houses)")
+        )
+        
+    return df_result.select(
+        col("window.start").cast("timestamp").alias("window_start"),
+        col("window.end").cast("timestamp").alias("window_end"),
+        "region",
+        "tsunami_count",
+        "damage_reports",
+        "avg_damage_severity",
+        "house_reports",
+        "avg_houses_severity"
+    )
+
 
 def run_query_3(df_stream: DataFrame) -> DataFrame:
-    """query_text"""
-    pass
-
+    """What is the most common source of tsunami origin by country (earhtuqake, volcano, landslide...)?"""
+    df_result = df_stream \
+        .withWatermark("timestamp", "10 seconds") \
+        .groupby(
+            window(col("timestamp"), "1 minute"),
+            col("country"),
+            col("cause")
+        ) \
+        .agg(
+            count("*").alias("source_count")
+        )
+        # For live leaderboard uncomment, change mode to 'complete' and disable writing to Elastic Search
+        #.orderBy(desc("tsunami_count")) \
+        #.limit(10) \
+        #.orderBy("window")
+        
+    return df_result.select(
+        col("window.start").cast("timestamp").alias("window_start"),
+        col("window.end").cast("timestamp").alias("window_end"),
+        "country",
+        "cause",
+        "source_count"
+    )
+    
 
 def run_query_4(df_stream: DataFrame) -> DataFrame:
-    """query_text"""
+    """What is the average magnitude and depth for an earthquake that produced tsunami per plate, enrichened with plates historical seismic activity?"""      
     pass
 
 
 def run_query_5(df_stream: DataFrame) -> DataFrame:
-    """query_text"""
+    """Are current near-boundary tsunami events (<100km from boundary) concentrated along historically most active tectonic plate borders (aggregation with query_9)?
+    """      
     pass
 
 
@@ -146,6 +229,8 @@ def main() -> None:
     print("\n>> Loading tectonic plates data from HDFS...")
     df_plates = load_parquet_into_df("/user/root/data-lake/transform/plate_polygons_wkt_parquet")
     df_plates.printSchema()
+    
+   # df_plates_statistics
     
     print("\n>> Loading Kafka stream...")
     df_stream_raw = load_kafka_stream(TOPIC)
@@ -157,22 +242,22 @@ def main() -> None:
 
     print("\n>> Running queries on the stream...")
     df_query_1 = run_query_1(df_stream, df_plates)
-    #df_query_2 = run_query_2(df_stream, df_plates)
-    #df_query_3 = run_query_3(df_stream)
+    df_query_2 = run_query_2(df_stream)
+    df_query_3 = run_query_3(df_stream)
     #df_query_4 = run_query_4(df_stream)
     #df_query_5 = run_query_5(df_stream)    
 
     # Write results to elastic searc and start the streaming processing
     query_1_es = write_stream_to_elasticsearch(df_query_1, index="query_1")
-    #query_2_es = write_stream_to_elasticsearch(df_query_2, index="query_2")
-    #query_3_es = write_stream_to_elasticsearch(df_query_3, index="query_3")
+    query_2_es = write_stream_to_elasticsearch(df_query_2, index="query_2")
+    query_3_es = write_stream_to_elasticsearch(df_query_3, index="query_3")
     #query_4_es = write_stream_to_elasticsearch(df_query_4, index="query_4")
     #query_5_es = write_stream_to_elasticsearch(df_query_5, index="query_5")
     
     # Debug to console
     query_1_debug = write_stream_to_console(df_query_1)
-    #query_2_debug = write_stream_to_console(df_query_2)
-    #query_3_debug = write_stream_to_console(df_query_3)
+    query_2_debug = write_stream_to_console(df_query_2)
+    query_3_debug = write_stream_to_console(df_query_3)
     #query_4_debug = write_stream_to_console(df_query_4)
     #query_5_debug = write_stream_to_console(df_query_5)
     

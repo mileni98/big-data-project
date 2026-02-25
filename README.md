@@ -105,6 +105,8 @@ DELETE 'index_name'
 
 Batch Processing:
 
+0. *What is historical statistical summary of each tectonic based on earhtquakes (to be used for stream processing)?*
+
 1. *How often do sonic_booms, quarry_blasts, nuclear_explosion and explosions occur each year?*
 
 2. *What is the total number of earthquakes with magnitude over 5 for each decade grouped into ranges?*
@@ -129,10 +131,10 @@ Stream Processing:
 
 1. *What is the number of tsunami events and their maximum and average intensity in 1 minute windows per tectonic plate (top 10 most active plates)?*
 
-2. *query_text*
+2. *What are the average damage cost and houses destroyed by tsunamis per region (Mediteranian, Alaskan...)?*
 
-3. *query_text*
+3. *What is the most common source of tsunami origin by country (earhtuqake, volcano, landslide...)?*
 
-4. *query_text*
+4. *What is the average magnitude and depth for an earthquake that produced tsunami per plate, enrichened with plates historical seismic activity?*
 
-5. *query_text*
+5. *Are current near-boundary tsunami events (<100km from boundary) concentrated along historically most active tectonic plate borders (aggregation with query_9)*

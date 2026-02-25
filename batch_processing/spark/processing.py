@@ -43,7 +43,25 @@ def save_dataframe_to_postgres(df: DataFrame, table_name: str) -> None:
         .option('password', 'postgres') \
         .mode('overwrite') \
         .save()
-
+        
+        
+def run_query_0(df_batch: DataFrame) -> DataFrame:
+    """What is historical statistical summary of each tectonic based on earhtquakes (to be used for stream processing)?"""
+    df_filtered = df_batch.filter(
+        (col("type") == "earthquake") &
+        (col("plate_name").isNotNull())
+    )
+    
+    # Compute basic statistics
+    return df_filtered.groupBy("plate_name").agg(
+        count("*").alias("total_occurrences"),
+        avg("magnitude").alias("average_magnitude"),
+        max("magnitude").alias("max_magnitude"),
+        sum(when(col("magnitude") >= 7, 1).otherwise(0)).alias("total_above_7"),
+        avg("depth").alias("average_depth"),
+        max("depth").alias("max_depth"),    
+    ).orderBy(desc("total_occurrences"))
+    
 
 def run_query_1(df_batch: DataFrame) -> DataFrame:
     """How often do sonic_booms, quarry_blasts, nuclear_explosion and explosions occur each year? """
@@ -411,6 +429,9 @@ def main() -> None:
     print("\n>> Loading helper shared borders data from HDFS...")
     df_shared_borders = load_parquet_into_df("/user/root/data-lake/transform/shared_borders_parquet")
     df_shared_borders.show(5)
+    
+    print("\n>> Running Query 0: 'What is historical statistical summary of each tectonic based on earhtquakes (to be used for stream processing)?'...")
+    run_save_show(run_query_0(df_batch), "query_0_plate_statistics")
     
     print("\n>> Running Query 1: 'How often do sonic_booms, quarry_blasts, nuclear_explosion and explosions occur each year?'...")
     run_save_show(run_query_1(df_batch), "query_1_yearly_explosion_counts")
