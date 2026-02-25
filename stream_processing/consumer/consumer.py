@@ -368,18 +368,18 @@ def main() -> None:
     df_query_5 = run_query_5(df_stream, df_plates, df_shared_borders, df_peak_plate_borders)    
 
     # Write results to elastic searc and start the streaming processing
-    #query_1_es = write_stream_to_elasticsearch(df_query_1, index="query_1")
-    #query_2_es = write_stream_to_elasticsearch(df_query_2, index="query_2")
-    #query_3_es = write_stream_to_elasticsearch(df_query_3, index="query_3")
-    #query_4_es = write_stream_to_elasticsearch(df_query_4, index="query_4")
-    #query_5_es = write_stream_to_elasticsearch(df_query_5, index="query_5")
+    query_1_es = write_stream_to_elasticsearch(df_query_1, index="query_1")
+    query_2_es = write_stream_to_elasticsearch(df_query_2, index="query_2")
+    query_3_es = write_stream_to_elasticsearch(df_query_3, index="query_3")
+    query_4_es = write_stream_to_elasticsearch(df_query_4, index="query_4")
+    query_5_es = write_stream_to_elasticsearch(df_query_5, index="query_5")
     
     # Debug to console
-    #query_1_debug = write_stream_to_console(df_query_1)
-    #query_2_debug = write_stream_to_console(df_query_2)
-    #query_3_debug = write_stream_to_console(df_query_3)
-    #query_4_debug = write_stream_to_console(df_query_4)
-    query_5_debug = write_stream_to_console(df_query_5)
+    query_1_debug = write_stream_to_console(df_query_1)
+    query_2_debug = write_stream_to_console(df_query_2)
+    query_3_debug = write_stream_to_console(df_query_3)
+    query_4_debug = write_stream_to_console(df_query_4)
+    duery_5_debug = write_stream_to_console(df_query_5)
     
     spark.streams.awaitAnyTermination()
 
