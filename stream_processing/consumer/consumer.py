@@ -212,14 +212,76 @@ def run_query_3(df_stream: DataFrame) -> DataFrame:
     )
     
 
-def run_query_4(df_stream: DataFrame) -> DataFrame:
-    """What is the average magnitude and depth for an earthquake that produced tsunami per plate, enrichened with plates historical seismic activity?"""      
-    pass
-
+def run_query_4(df_stream: DataFrame, df_plates: DataFrame, df_plate_statistics: DataFrame) -> DataFrame:
+    """What is the average magnitude and depth for an earthquake that produced tsunami per plate, enrichened with plates historical seismic activity?"""     
+    
+    # Filter only earthquake caused tsunamis
+    df_filtered = df_stream.filter(col("cause") == "Earthquake")
+    
+    # Assign in which plate tsunami was recorded
+    df_stream_with_plates = df_filtered.join(
+        broadcast(df_plates), # Cpy to all workers as dataset is small
+        expr("ST_CONTAINS(geometry, location_geometry)"),
+        "left"
+    )
+    
+    # Group by plate and aggreagete
+    df_result = df_stream_with_plates \
+        .withWatermark("timestamp", "10 seconds") \
+        .groupBy(
+            window(col("timestamp"), "1 minute"),
+            col("plate_name")
+        ) \
+        .agg(
+            count("*").alias("count_1m"),
+            avg("eq_magnitude").alias("avg_mag_1m"),
+            avg("eq_depth").alias("avg_depth_1m")
+        )
+        
+    # Enrich with plate statistics dataset
+    df_result = df_result.join(
+        broadcast(df_plate_statistics),
+        "plate_name",
+        "left"
+    )
+    
+    return df_result.select(
+        col("window.start").cast("timestamp").alias("window_start"),
+        col("window.end").cast("timestamp").alias("window_end"),
+        "plate_name",
+        "count_1m",
+        "avg_mag_1m",
+        "avg_depth_1m",
+        col("total_occurrences").alias("hist_total"),
+        col("average_magnitude").alias("hist_avg_mag"),
+        col("max_magnitude").alias("hist_max_mag"),
+        col("total_above_7").alias("hist_total_7+"),
+        col("average_depth").alias("hist_avg_depth"),
+        col("max_depth").alias("hist_max_depth"),
+    )
+        
 
 def run_query_5(df_stream: DataFrame) -> DataFrame:
-    """Are current near-boundary tsunami events (<100km from boundary) concentrated along historically most active tectonic plate borders (aggregation with query_9)?
-    """      
+    """Are current near-boundary tsunami events (<100km from boundary) concentrated along historically most active tectonic plate borders (aggregation with query_9)?"""
+    
+    
+        # Join with shared borders
+    df_joined = df_stream_with_plates.join(
+        broadcast(df_shared_borders),
+        df_stream_with_plates["plate_name"] == df_shared_borders["plate_name"]
+    )
+    
+    # Calculate distances to border
+    df_joined = df_joined.withColumn(
+        "distance_to_border_km",
+        expr("""
+            ST_DistanceSpehere(
+                location_geometry,
+                ST_ClosestPoint(shared_border, location_geometry)
+            ) /1000
+        """)
+    )
+      
     pass
 
 
@@ -230,7 +292,12 @@ def main() -> None:
     df_plates = load_parquet_into_df("/user/root/data-lake/transform/plate_polygons_wkt_parquet")
     df_plates.printSchema()
     
-   # df_plates_statistics
+    print("\n>> Loading shared borders data from HDFS...")
+    df_shared_borders = load_parquet_into_df("/user/root/data-lake/transform/shared_borders_parquet")
+    
+    print("\n>> Loading relevant postgre tables from batch processing... ")
+    df_plate_statistics = load_postgres_to_dataframe("query_0_plate_statistics")
+    df_peak_plate_borders = load_postgres_to_dataframe("query_9_peak_plate_borders")
     
     print("\n>> Loading Kafka stream...")
     df_stream_raw = load_kafka_stream(TOPIC)
@@ -244,21 +311,21 @@ def main() -> None:
     df_query_1 = run_query_1(df_stream, df_plates)
     df_query_2 = run_query_2(df_stream)
     df_query_3 = run_query_3(df_stream)
-    #df_query_4 = run_query_4(df_stream)
-    #df_query_5 = run_query_5(df_stream)    
+    df_query_4 = run_query_4(df_stream, df_plates, df_plate_statistics)
+    #df_query_5 = run_query_5(df_stream, df_plates, df_peak_plate_borders)    
 
     # Write results to elastic searc and start the streaming processing
-    query_1_es = write_stream_to_elasticsearch(df_query_1, index="query_1")
-    query_2_es = write_stream_to_elasticsearch(df_query_2, index="query_2")
-    query_3_es = write_stream_to_elasticsearch(df_query_3, index="query_3")
+    #query_1_es = write_stream_to_elasticsearch(df_query_1, index="query_1")
+    #query_2_es = write_stream_to_elasticsearch(df_query_2, index="query_2")
+    #query_3_es = write_stream_to_elasticsearch(df_query_3, index="query_3")
     #query_4_es = write_stream_to_elasticsearch(df_query_4, index="query_4")
     #query_5_es = write_stream_to_elasticsearch(df_query_5, index="query_5")
     
     # Debug to console
-    query_1_debug = write_stream_to_console(df_query_1)
-    query_2_debug = write_stream_to_console(df_query_2)
-    query_3_debug = write_stream_to_console(df_query_3)
-    #query_4_debug = write_stream_to_console(df_query_4)
+    #query_1_debug = write_stream_to_console(df_query_1)
+    #query_2_debug = write_stream_to_console(df_query_2)
+    #query_3_debug = write_stream_to_console(df_query_3)
+    query_4_debug = write_stream_to_console(df_query_4)
     #query_5_debug = write_stream_to_console(df_query_5)
     
     spark.streams.awaitAnyTermination()
