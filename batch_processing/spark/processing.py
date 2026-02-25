@@ -362,7 +362,7 @@ def run_query_9(df_batch: DataFrame, df_shared_borders: DataFrame) -> DataFrame:
         .groupBy("year", "plate", "neighbor_plate") \
         .agg(count("*").alias("total_occurrences")) \
         .orderBy(desc("total_occurrences")) \
-        .limit(5)
+        #.limit(5)
     
 
 def run_query_10(df_batch: DataFrame) -> DataFrame:

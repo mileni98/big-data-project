@@ -260,29 +260,82 @@ def run_query_4(df_stream: DataFrame, df_plates: DataFrame, df_plate_statistics:
         col("max_depth").alias("hist_max_depth"),
     )
         
-
-def run_query_5(df_stream: DataFrame) -> DataFrame:
+        
+def run_query_5(df_stream: DataFrame, df_plates: DataFrame, df_shared_borders: DataFrame, df_peak_plate_borders: DataFrame) -> DataFrame:
     """Are current near-boundary tsunami events (<100km from boundary) concentrated along historically most active tectonic plate borders (aggregation with query_9)?"""
-    
-    
-        # Join with shared borders
+     
+    # Assign in which plate tsunami was recorded
+    df_stream_with_plates = df_stream \
+        .join(
+            broadcast(df_plates),
+            expr("ST_Contains(geometry, location_geometry)"),
+            "left"
+        )
+                
+    # Join with shared borders
     df_joined = df_stream_with_plates.join(
         broadcast(df_shared_borders),
-        df_stream_with_plates["plate_name"] == df_shared_borders["plate_name"]
+        df_stream_with_plates["plate_name"] == df_shared_borders["plate"],
+        "left"
     )
     
     # Calculate distances to border
-    df_joined = df_joined.withColumn(
+    df_with_distances = df_joined.withColumn(
         "distance_to_border_km",
         expr("""
-            ST_DistanceSpehere(
+            ST_DistanceSphere(
                 location_geometry,
                 ST_ClosestPoint(shared_border, location_geometry)
             ) /1000
         """)
     )
-      
-    pass
+    
+    # Filter near border
+    df_near_boundary = df_with_distances.filter(
+        col("distance_to_border_km") < 100
+    )
+    
+    # Safe measure
+    df_near_boundary = df_near_boundary.dropDuplicates(["id"])
+    
+    # Rename peak historical border events
+    df_peak_renamed = df_peak_plate_borders.select(
+        col("plate").alias("hist_name"),
+        col("neighbor_plate").alias("hist_neighbor_plate"),
+        "total_occurrences"
+    )
+    
+    # Join with historical border activity, from the peak year
+    df_with_history = df_near_boundary.join(
+        broadcast(df_peak_renamed),
+        (df_near_boundary["plate_name"] == df_peak_renamed["hist_name"]) &
+        (df_near_boundary["neighbor_plate"] == df_peak_renamed["hist_neighbor_plate"]),
+        "left"
+    )
+    
+    # Aggregate per window
+    df_result = df_with_history \
+        .withWatermark("timestamp", "10 seconds") \
+        .groupBy(
+            window(col("timestamp"), "1 minute"),
+            "plate_name",
+            "neighbor_plate",
+            "total_occurrences"
+        ) \
+        .agg(
+            count("*").alias("near_boundary_count_1m"),
+            avg("distance_to_border_km").alias("avg_km_to_border_1m")
+        )    
+        
+    return df_result.select(
+        col("window.start").cast("timestamp").alias("window_start"),
+        col("window.end").cast("timestamp").alias("window_end"),
+        "plate_name",
+        "neighbor_plate",
+        col("total_occurrences").alias("total_earhquakes_peak_year"),
+        "near_boundary_count_1m",
+        "avg_km_to_border_1m"
+    )        
 
 
 def main() -> None:
@@ -312,7 +365,7 @@ def main() -> None:
     df_query_2 = run_query_2(df_stream)
     df_query_3 = run_query_3(df_stream)
     df_query_4 = run_query_4(df_stream, df_plates, df_plate_statistics)
-    #df_query_5 = run_query_5(df_stream, df_plates, df_peak_plate_borders)    
+    df_query_5 = run_query_5(df_stream, df_plates, df_shared_borders, df_peak_plate_borders)    
 
     # Write results to elastic searc and start the streaming processing
     #query_1_es = write_stream_to_elasticsearch(df_query_1, index="query_1")
@@ -325,8 +378,8 @@ def main() -> None:
     #query_1_debug = write_stream_to_console(df_query_1)
     #query_2_debug = write_stream_to_console(df_query_2)
     #query_3_debug = write_stream_to_console(df_query_3)
-    query_4_debug = write_stream_to_console(df_query_4)
-    #query_5_debug = write_stream_to_console(df_query_5)
+    #query_4_debug = write_stream_to_console(df_query_4)
+    query_5_debug = write_stream_to_console(df_query_5)
     
     spark.streams.awaitAnyTermination()
 
